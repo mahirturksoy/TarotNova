@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { View, Text, TextInput, TouchableOpacity, StyleSheet, ActivityIndicator } from 'react-native';
+import { Keyboard } from 'react-native';
 
 // Ruh hali seçenekleri için tip tanımı
 type MoodType = 'Mutlu' | 'Kararsız' | 'Endişeli' | null;
@@ -29,11 +30,12 @@ const UserInputFormComponent: React.FC<UserInputFormComponentProps> = ({
   ];
 
   // Form submit işlemi
-  const handleSubmit = () => {
-    if (question.trim() && mood && !isLoading) {
-      onSubmit(question.trim(), mood);
-    }
-  };
+ const handleSubmit = () => {
+  if (question.trim() && mood && !isLoading) {
+    Keyboard.dismiss(); // Klavyeyi kapat
+    onSubmit(question.trim(), mood);
+  }
+};
 
   // Form geçerliliğini kontrol et
   const isFormValid = question.trim().length > 0 && mood !== null && !isLoading;
@@ -116,8 +118,7 @@ const styles = StyleSheet.create({
   container: {
     backgroundColor: 'rgba(255, 255, 255, 0.95)',
     borderRadius: 25,
-    padding: 25,
-    marginVertical: 20,
+    padding: 24,
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 8 },
     shadowOpacity: 0.15,
@@ -125,19 +126,19 @@ const styles = StyleSheet.create({
     elevation: 8,
   },
   section: {
-    marginBottom: 30,
+    marginBottom: 28,
   },
   sectionLabel: {
     fontSize: 18,
     fontWeight: '600',
     color: '#2d3748',
-    marginBottom: 15,
+    marginBottom: 14,
     textAlign: 'center',
   },
   questionInput: {
     backgroundColor: '#f7fafc',
     borderRadius: 15,
-    padding: 20,
+    padding: 18,
     fontSize: 16,
     color: '#2d3748',
     minHeight: 100,
@@ -151,11 +152,11 @@ const styles = StyleSheet.create({
   },
   moodGrid: {
     flexDirection: 'column',
-    gap: 15,
+    gap: 14,
   },
   moodButton: {
     backgroundColor: '#f7fafc',
-    paddingVertical: 20,
+    paddingVertical: 18,
     paddingHorizontal: 20,
     borderRadius: 15,
     borderWidth: 2,

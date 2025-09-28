@@ -1,53 +1,60 @@
+// app/screens/CardSelectionScreen.tsx
+
 import React, { useState } from 'react';
-import { View, Text, ScrollView, TouchableOpacity, StyleSheet, Dimensions, FlatList } from 'react-native';
+import { 
+  View, 
+  Text, 
+  TouchableOpacity, 
+  StyleSheet, 
+  Dimensions, 
+  FlatList,
+  ActivityIndicator,
+  Image
+} from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useNavigation, useRoute } from '@react-navigation/native';
-import type { NativeStackNavigationProp, NativeStackScreenProps } from '@react-navigation/native-stack';
+import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 
-// Context ve servisler
 import { useReadingContext } from '../context/ReadingContext';
-import { MAJOR_ARCANA } from '../constants/tarotDeck';
+import { MAJOR_ARCANA, getCardImage } from '../constants/tarotDeck';
+import { SpreadType } from '../constants/spreadTypes';
+import type { RootStackParamList } from '../types/navigation';
 
-// Navigasyon tipleri
-import { RootStackParamList } from '../types/navigation';
-
-type CardSelectionScreenProps = NativeStackScreenProps<RootStackParamList, 'CardSelection'>;
-type CardSelectionNavigationProp = NativeStackNavigationProp<RootStackParamList, 'CardSelection'>;
+type CardSelectionScreenNavigationProp = NativeStackNavigationProp<RootStackParamList, 'CardSelection'>;
 
 const { width } = Dimensions.get('window');
-const cardWidth = (width - 60) / 3; // 3 kart yan yana, padding ile
 
-// Kart seçimi ekranı - Kullanıcı tarot kartlarını seçer
-const CardSelectionScreen: React.FC<CardSelectionScreenProps> = () => {
-  const navigation = useNavigation<CardSelectionNavigationProp>();
-  const route = useRoute<CardSelectionScreenProps['route']>();
-  const { generateReading } = useReadingContext();
+interface RouteParams {
+  question: string;
+  mood: string;
+  spreadType?: SpreadType;
+}
+
+const CardSelectionScreen: React.FC = () => {
+  const navigation = useNavigation<CardSelectionScreenNavigationProp>();
+  const route = useRoute();
+  const { generateReading, isLoading } = useReadingContext();
   
-  // Route parametrelerini al
-  const { question, mood } = route.params;
+  const params = route.params as RouteParams;
+  const { question, mood, spreadType } = params;
   
-  // Seçili kartlar state
+  const requiredCardCount = spreadType?.cardCount || 3;
+  const spreadName = spreadType?.name || 'Geçmiş - Şimdi - Gelecek';
+  
   const [selectedCards, setSelectedCards] = useState<string[]>([]);
   
-  // Kart seçme fonksiyonu
-  const handleCardSelect = (cardName: string) => {
+  const handleCardSelect = (cardName: string): void => {
     if (selectedCards.includes(cardName)) {
-      // Kart zaten seçili ise çıkar
       setSelectedCards(selectedCards.filter(card => card !== cardName));
-    } else if (selectedCards.length < 3) {
-      // Henüz 3 kart seçilmemişse ekle
+    } else if (selectedCards.length < requiredCardCount) {
       setSelectedCards([...selectedCards, cardName]);
     }
   };
 
-  // Seçimi tamamla ve reading ekranına git
-  const handleCompleteSelection = async () => {
-    if (selectedCards.length === 3) {
+  const handleCompleteSelection = async (): Promise<void> => {
+    if (selectedCards.length === requiredCardCount && !isLoading) {
       try {
-        // Seçilen kartlarla tarot okuması oluştur
-        await generateReading(question, mood, selectedCards);
-        
-        // Reading ekranına yönlendir
+        await generateReading(question, mood, selectedCards, spreadType);
         navigation.navigate('Reading');
       } catch (error) {
         console.error('Kart seçimi hatası:', error);
@@ -56,37 +63,47 @@ const CardSelectionScreen: React.FC<CardSelectionScreenProps> = () => {
     }
   };
 
-  // Kart render fonksiyonu
   const renderCard = ({ item }: { item: typeof MAJOR_ARCANA[0] }) => {
     const isSelected = selectedCards.includes(item.name);
+    const selectionIndex = isSelected ? selectedCards.indexOf(item.name) + 1 : 0;
+    const cardImage = getCardImage(item.imageName);
     
     return (
       <TouchableOpacity
+        onPress={() => handleCardSelect(item.name)}
+        activeOpacity={0.7}
         style={[
           styles.card,
           isSelected && styles.selectedCard
         ]}
-        onPress={() => handleCardSelect(item.name)}
-        activeOpacity={0.7}
       >
-        <View style={styles.cardContent}>
-          <View style={styles.cardImagePlaceholder}>
-            <Text style={styles.cardNumber}>{item.id}</Text>
+        {isSelected && (
+          <View style={styles.selectionBadge}>
+            <Text style={styles.selectionNumber}>{selectionIndex}</Text>
           </View>
-          <Text style={[
-            styles.cardName,
-            isSelected && styles.selectedCardName
-          ]}>
-            {item.name}
-          </Text>
-          {isSelected && (
-            <View style={styles.selectionIndicator}>
-              <Text style={styles.selectionNumber}>
-                {selectedCards.indexOf(item.name) + 1}
-              </Text>
-            </View>
-          )}
-        </View>
+        )}
+        
+        {cardImage ? (
+          <Image
+            source={cardImage}
+            style={styles.cardImage}
+            resizeMode="cover"
+          />
+        ) : (
+          <View style={styles.placeholderCard}>
+            <Text style={styles.cardNumber}>{item.id}</Text>
+            <Text style={styles.cardNamePlaceholder}>{item.name}</Text>
+          </View>
+        )}
+        
+        {isSelected && (
+          <View style={styles.selectedOverlay}>
+            <LinearGradient
+              colors={['transparent', 'rgba(232, 185, 35, 0.3)']}
+              style={styles.selectedGradient}
+            />
+          </View>
+        )}
       </TouchableOpacity>
     );
   };
@@ -94,23 +111,30 @@ const CardSelectionScreen: React.FC<CardSelectionScreenProps> = () => {
   return (
     <LinearGradient
       colors={['#1e3c72', '#2a5298', '#1e3c72']}
-      locations={[0, 0.5, 1]}
       style={styles.container}
     >
-      {/* Başlık ve açıklama */}
-      <View style={styles.headerSection}>
+      {/* Header */}
+      <LinearGradient
+        colors={['#6B46C1', '#7C3AED']}
+        style={styles.header}
+      >
         <Text style={styles.title}>Kartlarınızı Seçin</Text>
-        <Text style={styles.subtitle}>
-          3 kart seçin ({selectedCards.length}/3)
-        </Text>
-        <View style={styles.questionContainer}>
-          <Text style={styles.questionLabel}>Sorunuz:</Text>
-          <Text style={styles.questionText}>"{question}"</Text>
-          <Text style={styles.moodText}>Ruh haliniz: {mood}</Text>
+        <Text style={styles.spreadName}>{spreadName}</Text>
+        
+        <View style={styles.progressContainer}>
+          <Text style={styles.progressText}>
+            {selectedCards.length}/{requiredCardCount} kart seçildi
+          </Text>
+          <View style={styles.progressBar}>
+            <View style={[
+              styles.progressFill,
+              { width: `${(selectedCards.length / requiredCardCount) * 100}%` }
+            ]} />
+          </View>
         </View>
-      </View>
+      </LinearGradient>
 
-      {/* Kart listesi */}
+      {/* Kart Grid */}
       <FlatList
         data={MAJOR_ARCANA}
         renderItem={renderCard}
@@ -118,168 +142,213 @@ const CardSelectionScreen: React.FC<CardSelectionScreenProps> = () => {
         numColumns={3}
         contentContainerStyle={styles.cardsContainer}
         showsVerticalScrollIndicator={false}
+        columnWrapperStyle={styles.row}
       />
 
-      {/* Alt buton */}
-      <View style={styles.bottomSection}>
-        <TouchableOpacity
-          style={[
-            styles.completeButton,
-            selectedCards.length !== 3 && styles.completeButtonDisabled
-          ]}
-          onPress={handleCompleteSelection}
-          disabled={selectedCards.length !== 3}
-          activeOpacity={0.8}
-        >
-          <Text style={[
-            styles.completeButtonText,
-            selectedCards.length !== 3 && styles.completeButtonTextDisabled
-          ]}>
-            {selectedCards.length === 3 
-              ? 'Kartları Yorumla' 
-              : `${3 - selectedCards.length} kart daha seçin`
-            }
-          </Text>
-        </TouchableOpacity>
-      </View>
+      {/* Floating Button */}
+      {selectedCards.length === requiredCardCount && (
+        <View style={styles.floatingButtonContainer}>
+          <TouchableOpacity
+            style={styles.completeButton}
+            onPress={handleCompleteSelection}
+            disabled={isLoading}
+            activeOpacity={0.8}
+          >
+            <LinearGradient
+              colors={['#E8B923', '#F59E0B']}
+              style={styles.buttonGradient}
+            >
+              {isLoading ? (
+                <View style={styles.loadingContainer}>
+                  <ActivityIndicator size="small" color="#0A0A0F" />
+                  <Text style={styles.loadingText}>Nova Analiz Ediyor...</Text>
+                </View>
+              ) : (
+                <Text style={styles.completeButtonText}>
+                  Kartları Yorumla
+                </Text>
+              )}
+            </LinearGradient>
+          </TouchableOpacity>
+        </View>
+      )}
     </LinearGradient>
   );
 };
 
-// Stil tanımlamaları
 const styles = StyleSheet.create({
   container: {
     flex: 1,
   },
-  headerSection: {
+  
+  header: {
     paddingHorizontal: 20,
-    paddingVertical: 20,
+    paddingTop: 20,
+    paddingBottom: 15,
   },
+  
   title: {
-    fontSize: 28,
-    fontWeight: 'bold',
+    fontSize: 22,
+    fontWeight: 'bold' as const,
     color: '#ffffff',
     textAlign: 'center',
-    marginBottom: 8,
+    marginBottom: 4,
   },
-  subtitle: {
-    fontSize: 18,
-    color: '#b3d9ff',
-    textAlign: 'center',
-    marginBottom: 20,
-  },
-  questionContainer: {
-    backgroundColor: 'rgba(255, 255, 255, 0.1)',
-    borderRadius: 15,
-    padding: 15,
-    borderWidth: 1,
-    borderColor: 'rgba(255, 255, 255, 0.2)',
-  },
-  questionLabel: {
+  
+  spreadName: {
     fontSize: 14,
-    color: '#b3d9ff',
-    marginBottom: 5,
-  },
-  questionText: {
-    fontSize: 16,
-    color: '#ffffff',
+    color: 'rgba(255, 255, 255, 0.9)',
+    textAlign: 'center',
+    marginBottom: 10,
     fontStyle: 'italic',
-    marginBottom: 8,
   },
-  moodText: {
-    fontSize: 14,
-    color: '#b3d9ff',
-  },
-  cardsContainer: {
-    paddingHorizontal: 20,
-    paddingBottom: 20,
-  },
-  card: {
-    width: cardWidth,
-    marginRight: 10,
-    marginBottom: 15,
-    backgroundColor: 'rgba(255, 255, 255, 0.9)',
-    borderRadius: 12,
-    padding: 10,
-    borderWidth: 2,
-    borderColor: 'transparent',
-  },
-  selectedCard: {
-    borderColor: '#ffd700',
-    backgroundColor: 'rgba(255, 215, 0, 0.2)',
-  },
-  cardContent: {
+  
+  progressContainer: {
     alignItems: 'center',
+  },
+  
+  progressText: {
+    fontSize: 14,
+    color: 'rgba(255, 255, 255, 0.9)',
+    marginBottom: 6,
+  },
+  
+  progressBar: {
+    width: '100%',
+    height: 4,
+    backgroundColor: 'rgba(255, 255, 255, 0.2)',
+    borderRadius: 2,
+    overflow: 'hidden',
+  },
+  
+  progressFill: {
+    height: '100%',
+    backgroundColor: '#E8B923',
+    borderRadius: 2,
+  },
+  
+  cardsContainer: {
+    paddingHorizontal: 10,
+    paddingTop: 15,
+    paddingBottom: 120,
+  },
+  
+  row: {
+    justifyContent: 'space-between',
+    marginBottom: 10,
+  },
+  
+  card: {
+    width: (width - 30) / 3,
+    aspectRatio: 0.6,
+    borderRadius: 8,
+    overflow: 'hidden',
+    backgroundColor: '#1a1a2e',
     position: 'relative',
   },
-  cardImagePlaceholder: {
-    width: cardWidth - 20,
-    height: (cardWidth - 20) * 1.5,
-    backgroundColor: '#2d3748',
-    borderRadius: 8,
+  
+  selectedCard: {
+    transform: [{ scale: 0.95 }],
+    borderWidth: 2,
+    borderColor: '#E8B923',
+  },
+  
+  cardImage: {
+    width: '100%',
+    height: '100%',
+  },
+  
+  placeholderCard: {
+    flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
-    marginBottom: 8,
+    backgroundColor: '#2D3748',
+    padding: 8,
   },
+  
   cardNumber: {
     fontSize: 24,
-    fontWeight: 'bold',
+    fontWeight: 'bold' as const,
     color: '#ffffff',
+    marginBottom: 8,
   },
-  cardName: {
-    fontSize: 12,
-    fontWeight: '600',
-    color: '#2d3748',
+  
+  cardNamePlaceholder: {
+    fontSize: 10,
+    color: 'rgba(255, 255, 255, 0.8)',
     textAlign: 'center',
-    lineHeight: 16,
   },
-  selectedCardName: {
-    color: '#b8860b',
-  },
-  selectionIndicator: {
+  
+  selectionBadge: {
     position: 'absolute',
-    top: -5,
-    right: -5,
+    top: 5,
+    right: 5,
     width: 24,
     height: 24,
-    backgroundColor: '#ffd700',
     borderRadius: 12,
+    backgroundColor: '#E8B923',
     justifyContent: 'center',
     alignItems: 'center',
+    zIndex: 2,
   },
+  
   selectionNumber: {
     fontSize: 12,
-    fontWeight: 'bold',
-    color: '#2d3748',
+    fontWeight: 'bold' as const,
+    color: '#0A0A0F',
   },
-  bottomSection: {
-    paddingHorizontal: 20,
-    paddingBottom: 40,
-    paddingTop: 20,
+  
+  selectedOverlay: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
   },
+  
+  selectedGradient: {
+    flex: 1,
+  },
+  
+  floatingButtonContainer: {
+    position: 'absolute',
+    bottom: 95,
+    left: 20,
+    right: 20,
+  },
+  
   completeButton: {
-    backgroundColor: '#ffd700',
-    paddingVertical: 18,
-    borderRadius: 15,
-    alignItems: 'center',
-    shadowColor: '#ffd700',
+    borderRadius: 12,
+    overflow: 'hidden',
+    shadowColor: '#000',
     shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.3,
+    shadowOpacity: 0.25,
     shadowRadius: 8,
-    elevation: 6,
+    elevation: 8,
   },
-  completeButtonDisabled: {
-    backgroundColor: 'rgba(255, 255, 255, 0.3)',
-    shadowOpacity: 0,
-    elevation: 0,
+  
+  buttonGradient: {
+    paddingVertical: 16,
+    alignItems: 'center',
+    justifyContent: 'center',
   },
+  
+  loadingContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 10,
+  },
+  
+  loadingText: {
+    fontSize: 16,
+    fontWeight: '600' as const,
+    color: '#0A0A0F',
+  },
+  
   completeButtonText: {
-    fontSize: 18,
-    fontWeight: 'bold',
-    color: '#2d3748',
-  },
-  completeButtonTextDisabled: {
-    color: 'rgba(255, 255, 255, 0.7)',
+    fontSize: 16,
+    fontWeight: 'bold' as const,
+    color: '#0A0A0F',
   },
 });
 
