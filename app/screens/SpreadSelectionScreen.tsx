@@ -1,22 +1,21 @@
-// SpreadSelectionScreen.tsx - Düzenlenmiş versiyon
+// app/screens/SpreadSelectionScreen.tsx
 
 import React, { useState } from 'react';
-import { 
-  View, 
-  Text, 
-  TouchableOpacity, 
-  StyleSheet, 
+import {
+  View,
+  Text,
+  StyleSheet,
   ScrollView,
-  Dimensions 
+  TouchableOpacity,
+  Platform
 } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useNavigation, useRoute } from '@react-navigation/native';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 
-import { SPREAD_TYPES, CATEGORY_COLORS, DIFFICULTY_LABELS, SpreadType } from '../constants/spreadTypes';
+import { SPREAD_TYPES, SPREAD_CATEGORIES } from '../constants/spreadTypes';
 import type { RootStackParamList } from '../types/navigation';
-
-const { width } = Dimensions.get('window');
+import type { SpreadType, SpreadCategory } from '../constants/spreadTypes';
 
 type SpreadSelectionScreenNavigationProp = NativeStackNavigationProp<RootStackParamList, 'SpreadSelection'>;
 
@@ -28,105 +27,96 @@ interface RouteParams {
 const SpreadSelectionScreen: React.FC = () => {
   const navigation = useNavigation<SpreadSelectionScreenNavigationProp>();
   const route = useRoute();
-  const params = route.params as RouteParams;
-  const { question, mood } = params;
+  const { question, mood } = route.params as RouteParams;
 
-  const [selectedSpread, setSelectedSpread] = useState<SpreadType | null>(null);
+  const [selectedCategory, setSelectedCategory] = useState<SpreadCategory>('general');
 
-  const handleSpreadSelect = (spread: SpreadType) => {
-    setSelectedSpread(spread);
+  const handleSpreadSelect = (spreadType: SpreadType) => {
+    navigation.navigate('CardSelection', {
+      question,
+      mood,
+      spreadType
+    });
   };
 
-  const handleContinue = () => {
-    if (selectedSpread) {
-      navigation.navigate('CardSelection', {
-        question,
-        mood,
-        spreadType: selectedSpread
-      });
-    }
+  const filteredSpreads = SPREAD_TYPES.filter(spread => spread.category === selectedCategory);
+
+  const getCategoryIcon = (category: SpreadCategory): string => {
+    const icons: Record<SpreadCategory, string> = {
+      general: '✦',
+      love: '♡',
+      career: '◈',
+      spiritual: '☾',
+      decision: '⟷', // <<< DEĞİŞİKLİK 1: İkon güncellendi
+      timing: '⟳'
+    };
+    return icons[category];
   };
+
+  const renderCategoryTabs = () => (
+    <ScrollView 
+      horizontal 
+      showsHorizontalScrollIndicator={false}
+      contentContainerStyle={styles.categoryTabsContent}
+    >
+      {SPREAD_CATEGORIES.map((category) => (
+        <TouchableOpacity
+          key={category.id}
+          style={[
+            styles.categoryTab,
+            selectedCategory === category.id && styles.activeCategoryTab
+          ]}
+          onPress={() => setSelectedCategory(category.id)}
+        >
+          <Text style={[
+            styles.categoryTabText,
+            selectedCategory === category.id && styles.activeCategoryTabText
+          ]}>
+            {getCategoryIcon(category.id)} {category.name}
+          </Text>
+        </TouchableOpacity>
+      ))}
+    </ScrollView>
+  );
 
   const renderSpreadCard = (spread: SpreadType) => {
-    const isSelected = selectedSpread?.id === spread.id;
-    const categoryColor = CATEGORY_COLORS[spread.category];
-    const difficultyInfo = DIFFICULTY_LABELS[spread.difficulty];
-
     return (
       <TouchableOpacity
         key={spread.id}
-        style={[
-          styles.spreadCard,
-          isSelected && styles.selectedSpreadCard
-        ]}
+        style={styles.spreadCard}
         onPress={() => handleSpreadSelect(spread)}
         activeOpacity={0.8}
       >
         <LinearGradient
-          colors={isSelected 
-            ? [categoryColor.primary, categoryColor.light]
-            : ['#2D3748', '#4A5568']}
-          style={styles.cardGradient}
+          colors={['rgba(74, 4, 78, 0.3)', 'rgba(74, 4, 78, 0.5)']}
+          style={styles.spreadCardGradient}
         >
-          {/* Kart sayısı badge */}
-          <View style={styles.cardCountBadge}>
-            <Text style={styles.cardCountNumber}>{spread.cardCount}</Text>
-            <Text style={styles.cardCountLabel}>KART</Text>
+          <View style={styles.spreadCardHeader}>
+            <Text style={styles.spreadIcon}>{getCategoryIcon(spread.category)}</Text>
+            <Text style={styles.spreadName}>{spread.name}</Text>
           </View>
 
-          {/* Ana içerik */}
-          <View style={styles.cardContent}>
-            <Text style={[
-              styles.spreadName,
-              isSelected && styles.selectedText
-            ]}>
-              {spread.name}
-            </Text>
-            
-            <Text style={[
-              styles.spreadDescription,
-              isSelected && styles.selectedText
-            ]} numberOfLines={2}>
-              {spread.description}
-            </Text>
-
-            {/* Meta bilgiler */}
-            <View style={styles.metaRow}>
-              <View style={[
-                styles.categoryBadge,
-                { backgroundColor: categoryColor.background }
-              ]}>
-                <Text style={[
-                  styles.categoryText,
-                  { color: categoryColor.primary }
-                ]}>
-                  {spread.category.toUpperCase()}
-                </Text>
-              </View>
-              
-              <View style={styles.difficultyBadge}>
-                <Text style={[
-                  styles.difficultyText,
-                  { color: difficultyInfo.color }
-                ]}>
-                  {difficultyInfo.label}
-                </Text>
-              </View>
-              
-              <Text style={[
-                styles.timeText,
-                isSelected && styles.selectedText
-              ]}>
-                ⏱ {spread.estimatedTime}
-              </Text>
+          <View style={styles.spreadMetaContainer}>
+            <View style={styles.metaBadge}>
+              <Text style={styles.metaText}>{spread.cardCount} Kart</Text>
+            </View>
+            {/* <<< DEĞİŞİKLİK 2: Zorluk seviyesi etiketi kaldırıldı */}
+          </View>
+          
+          <Text style={styles.spreadDescription}>{spread.description}</Text>
+          
+          <View style={styles.positionsContainer}>
+            <Text style={styles.positionsTitle}>Pozisyonlar:</Text>
+            <View style={styles.positionsList}>
+              {spread.positions.map((position, index) => (
+                <View key={index} style={styles.positionItem}>
+                  <Text style={styles.positionText}>
+                    <Text style={styles.positionNumber}>{index + 1}</Text> {position.name}
+                  </Text>
+                </View>
+              ))}
             </View>
           </View>
-
-          {isSelected && (
-            <View style={styles.selectedIndicator}>
-              <Text style={styles.checkmark}>✓</Text>
-            </View>
-          )}
         </LinearGradient>
       </TouchableOpacity>
     );
@@ -134,48 +124,33 @@ const SpreadSelectionScreen: React.FC = () => {
 
   return (
     <LinearGradient
-      colors={['#1e3c72', '#2a5298', '#1e3c72']}
+      colors={['#1d112b', '#2b173f', '#1d112b']}
       style={styles.container}
     >
-      {/* Kompakt Header */}
-      <View style={styles.header}>
-        <Text style={styles.title}>Okuma Türü Seçin</Text>
-        <Text style={styles.subtitle}>
-          Sorunuza en uygun spread'i belirleyin
-        </Text>
-      </View>
-
-      {/* Spread Kartları */}
       <ScrollView 
-        style={styles.spreadsContainer}
-        contentContainerStyle={styles.spreadsContent}
+        style={styles.spreadsList}
+        contentContainerStyle={styles.spreadsListContent}
         showsVerticalScrollIndicator={false}
       >
-        {SPREAD_TYPES.map(renderSpreadCard)}
-        
-        {/* Tab bar için boşluk */}
-        <View style={{ height: 120 }} />
-      </ScrollView>
-
-      {/* Floating Continue Button */}
-      {selectedSpread && (
-        <View style={styles.floatingButtonContainer}>
-          <TouchableOpacity
-            style={styles.continueButton}
-            onPress={handleContinue}
-            activeOpacity={0.8}
-          >
-            <LinearGradient
-              colors={['#E8B923', '#F59E0B']}
-              style={styles.buttonGradient}
-            >
-              <Text style={styles.continueButtonText}>
-                {selectedSpread.cardCount} Kart Seç →
-              </Text>
-            </LinearGradient>
-          </TouchableOpacity>
+        <View style={styles.questionInfoContainer}>
+          <Text style={styles.questionLabel}>Sorunuz:</Text>
+          <Text style={styles.questionText}>"{question}"</Text>
+          <Text style={styles.moodText}>Ruh Hali: {mood}</Text>
         </View>
-      )}
+
+        {renderCategoryTabs()}
+
+        <View style={styles.categoryInfo}>
+          <Text style={styles.categoryInfoTitle}>
+            {SPREAD_CATEGORIES.find(c => c.id === selectedCategory)?.name}
+          </Text>
+          <Text style={styles.categoryInfoDescription}>
+            {SPREAD_CATEGORIES.find(c => c.id === selectedCategory)?.description}
+          </Text>
+        </View>
+
+        {filteredSpreads.map(spread => renderSpreadCard(spread))}
+      </ScrollView>
     </LinearGradient>
   );
 };
@@ -184,184 +159,168 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
   },
-  
-  header: {
-    paddingHorizontal: 20,
-    paddingTop: 20,
-    paddingBottom: 15,
-    backgroundColor: 'rgba(0, 0, 0, 0.2)',
-  },
-  
-  title: {
-    fontSize: 24,
-    fontWeight: 'bold',
-    color: '#ffffff',
-    textAlign: 'center',
-    marginBottom: 6,
-  },
-  
-  subtitle: {
-    fontSize: 14,
-    color: 'rgba(255, 255, 255, 0.8)',
-    textAlign: 'center',
-  },
-  
-  spreadsContainer: {
+  spreadsList: {
     flex: 1,
   },
-  
-  spreadsContent: {
-    paddingHorizontal: 20,
-    paddingTop: 15,
+  spreadsListContent: {
+    paddingBottom: 100,
   },
-  
-  spreadCard: {
-    marginBottom: 12,
-    borderRadius: 12,
-    overflow: 'hidden',
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 4,
-    elevation: 3,
-  },
-  
-  selectedSpreadCard: {
-    transform: [{ scale: 1.02 }],
-    shadowOpacity: 0.2,
-    shadowRadius: 8,
-    elevation: 6,
-  },
-  
-  cardGradient: {
-    flexDirection: 'row',
+  questionInfoContainer: {
+    margin: 20,
     padding: 16,
-    alignItems: 'center',
+    backgroundColor: 'rgba(74, 4, 78, 0.3)',
+    borderRadius: 12,
+    borderWidth: 1,
+    borderColor: '#701a75',
   },
-  
-  cardCountBadge: {
-    width: 60,
-    height: 60,
-    borderRadius: 30,
-    backgroundColor: 'rgba(255, 255, 255, 0.15)',
-    justifyContent: 'center',
-    alignItems: 'center',
-    marginRight: 16,
+  questionLabel: {
+    fontSize: 12,
+    color: 'rgba(243, 232, 255, 0.7)',
+    marginBottom: 4,
   },
-  
-  cardCountNumber: {
-    fontSize: 24,
-    fontWeight: 'bold',
-    color: '#ffffff',
+  questionText: {
+    fontSize: 16,
+    color: '#f3e8ff',
+    fontStyle: 'italic',
+    marginBottom: 8,
+    lineHeight: 22,
   },
-  
-  cardCountLabel: {
-    fontSize: 10,
-    color: 'rgba(255, 255, 255, 0.8)',
+  moodText: {
+    fontSize: 14,
+    color: '#d4af37',
+    fontWeight: '500',
+  },
+  categoryTabsContent: {
+    paddingHorizontal: 20,
+    paddingBottom: 20,
+    gap: 10,
+  },
+  categoryTab: {
+    paddingHorizontal: 16,
+    paddingVertical: 10,
+    backgroundColor: 'rgba(0, 0, 0, 0.2)',
+    borderRadius: 20,
+    borderWidth: 1,
+    borderColor: 'rgba(212, 175, 55, 0.5)',
+  },
+  activeCategoryTab: {
+    backgroundColor: '#d4af37',
+    borderColor: '#d4af37',
+  },
+  categoryTabText: {
+    fontSize: 14,
+    color: '#d4af37',
     fontWeight: '600',
   },
-  
-  cardContent: {
-    flex: 1,
+  activeCategoryTabText: {
+    color: '#1d112b',
   },
-  
+  categoryInfo: {
+    marginHorizontal: 20,
+    marginBottom: 20,
+    padding: 16,
+    backgroundColor: 'rgba(212, 175, 55, 0.1)',
+    borderRadius: 12,
+    borderLeftWidth: 4,
+    borderLeftColor: '#d4af37',
+  },
+  categoryInfoTitle: {
+    fontSize: 18,
+    fontWeight: 'bold',
+    color: '#d4af37',
+    marginBottom: 4,
+    fontFamily: Platform.select({
+      ios: 'Georgia',
+      android: 'serif',
+      default: 'serif',
+    }),
+  },
+  categoryInfoDescription: {
+    fontSize: 14,
+    color: 'rgba(243, 232, 255, 0.8)',
+    lineHeight: 20,
+  },
+  spreadCard: {
+    marginHorizontal: 20,
+    marginBottom: 16,
+    borderRadius: 16,
+    overflow: 'hidden',
+    borderWidth: 1,
+    borderColor: '#701a75',
+  },
+  spreadCardGradient: {
+    padding: 16,
+  },
+  spreadCardHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: 12,
+  },
+  spreadIcon: {
+    fontSize: 20,
+    color: '#d4af37',
+    marginRight: 10,
+  },
   spreadName: {
     fontSize: 18,
     fontWeight: 'bold',
-    color: '#ffffff',
-    marginBottom: 6,
+    color: '#f3e8ff',
+    fontFamily: Platform.select({
+      ios: 'Georgia',
+      android: 'serif',
+      default: 'serif',
+    }),
   },
-  
-  spreadDescription: {
-    fontSize: 13,
-    color: 'rgba(255, 255, 255, 0.85)',
-    lineHeight: 18,
-    marginBottom: 10,
-  },
-  
-  metaRow: {
+  spreadMetaContainer: {
     flexDirection: 'row',
-    alignItems: 'center',
+    gap: 8,
+    marginBottom: 12,
+  },
+  metaBadge: {
+    paddingHorizontal: 8,
+    paddingVertical: 3,
+    backgroundColor: 'rgba(212, 175, 55, 0.2)',
+    borderRadius: 6,
+  },
+  metaText: {
+    fontSize: 11,
+    color: '#d4af37',
+    fontWeight: 'bold',
+  },
+  spreadDescription: {
+    fontSize: 14,
+    color: 'rgba(243, 232, 255, 0.8)',
+    lineHeight: 20,
+    marginBottom: 16,
+  },
+  positionsContainer: {
+    marginTop: 8,
+  },
+  positionsTitle: {
+    fontSize: 12,
+    color: '#d4af37',
+    fontWeight: 'bold',
+    marginBottom: 8,
+  },
+  positionsList: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
     gap: 8,
   },
-  
-  categoryBadge: {
+  positionItem: {
+    backgroundColor: 'rgba(0, 0, 0, 0.2)',
+    borderRadius: 6,
     paddingHorizontal: 8,
-    paddingVertical: 3,
-    borderRadius: 10,
+    paddingVertical: 4,
   },
-  
-  categoryText: {
-    fontSize: 10,
-    fontWeight: 'bold',
-  },
-  
-  difficultyBadge: {
-    paddingHorizontal: 8,
-    paddingVertical: 3,
-    borderRadius: 10,
-    backgroundColor: 'rgba(255, 255, 255, 0.1)',
-  },
-  
-  difficultyText: {
-    fontSize: 10,
-    fontWeight: 'bold',
-  },
-  
-  timeText: {
+  positionNumber: {
     fontSize: 11,
-    color: 'rgba(255, 255, 255, 0.7)',
-  },
-  
-  selectedIndicator: {
-    position: 'absolute',
-    top: 10,
-    right: 10,
-    width: 24,
-    height: 24,
-    borderRadius: 12,
-    backgroundColor: 'rgba(255, 255, 255, 0.2)',
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  
-  checkmark: {
-    color: '#ffffff',
+    color: '#d4af37',
     fontWeight: 'bold',
-    fontSize: 14,
   },
-  
-  selectedText: {
-    color: '#ffffff',
-  },
-  
-  floatingButtonContainer: {
-    position: 'absolute',
-    bottom: 95,
-    left: 20,
-    right: 20,
-  },
-  
-  continueButton: {
-    borderRadius: 12,
-    overflow: 'hidden',
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.25,
-    shadowRadius: 8,
-    elevation: 8,
-  },
-  
-  buttonGradient: {
-    paddingVertical: 16,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  
-  continueButtonText: {
-    fontSize: 16,
-    fontWeight: 'bold',
-    color: '#0A0A0F',
+  positionText: {
+    fontSize: 12,
+    color: 'rgba(243, 232, 255, 0.9)',
   },
 });
 

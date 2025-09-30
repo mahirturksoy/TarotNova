@@ -1,392 +1,191 @@
+// app/services/readingHistoryService.ts
+
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import { TarotReading } from './tarotAPIService';
 import { SpreadType } from '../constants/spreadTypes';
 
-// Okuma geçmişi için genişletilmiş tip
-export interface ReadingHistoryItem extends TarotReading {
+const STORAGE_KEY = '@tarot_readings';
+
+export interface CardDetail {
+  cardName: string;
+  position: string;
+  meaning: string;
+  advice: string;
+}
+
+export interface LifeAspects {
+  love: string;
+  career: string;
+  personal: string;
+}
+
+export interface ReadingHistoryItem {
   id: string;
   question: string;
   mood: string;
   cards: string[];
-  spreadType: SpreadType | null;
-  isFavorite: boolean;
+  spreadType?: SpreadType;
+  holisticInterpretation: string;
+  cardDetails: CardDetail[];
+  lifeAspects: LifeAspects;
+  summary: string;
+  confidence: number;
+  readingTitle: string;
   createdAt: string;
+  isFavorite: boolean;
 }
 
-// Storage key'leri
-const STORAGE_KEYS = {
-  READING_HISTORY: '@tarot_nova_reading_history',
-  USER_STATS: '@tarot_nova_user_stats'
-};
-
-// Kullanıcı istatistikleri
 export interface UserStats {
   totalReadings: number;
   favoriteReadings: number;
   streakDays: number;
-  lastReadingDate: string;
   mostUsedSpread: string;
-  readingsByMonth: Record<string, number>;
+  lastReadingDate: string | null;
 }
 
-/**
- * Unique ID generator for readings
- */
-const generateReadingId = (): string => {
-  return `reading_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
-};
-
-/**
- * Okuma geçmişine yeni kayıt ekleme
- */
-export const saveReadingToHistory = async (
-  reading: TarotReading,
-  question: string,
-  mood: string,
-  cards: string[],
-  spreadType: SpreadType | null
-): Promise<void> => {
+// Yeni okuma kaydetme
+export const saveReading = async (reading: Omit<ReadingHistoryItem, 'id' | 'createdAt' | 'isFavorite'>): Promise<void> => {
   try {
-    // Mevcut geçmişi al
-    const existingHistory = await getReadingHistory();
+    const existingReadings = await getReadingHistory();
     
-    // Yeni okuma kaydı oluştur
     const newReading: ReadingHistoryItem = {
       ...reading,
-      id: generateReadingId(),
-      question,
-      mood,
-      cards,
-      spreadType,
-      isFavorite: false,
+      id: Date.now().toString(),
       createdAt: new Date().toISOString(),
+      isFavorite: false
     };
     
-    // Yeni okumayı listenin başına ekle (en yeni üstte)
-    const updatedHistory = [newReading, ...existingHistory];
-    
-    // Storage'a kaydet (son 100 okumayı sakla)
-    const limitedHistory = updatedHistory.slice(0, 100);
-    await AsyncStorage.setItem(
-      STORAGE_KEYS.READING_HISTORY, 
-      JSON.stringify(limitedHistory)
-    );
-    
-    // Kullanıcı istatistiklerini güncelle
-    await updateUserStats(newReading);
-    
+    const updatedReadings = [newReading, ...existingReadings];
+    await AsyncStorage.setItem(STORAGE_KEY, JSON.stringify(updatedReadings));
   } catch (error) {
-    console.error('Error saving reading to history:', error);
+    console.error('Okuma kaydedilemedi:', error);
     throw error;
   }
 };
 
-/**
- * Okuma geçmişini getir
- */
+// Tüm okumaları getir
 export const getReadingHistory = async (): Promise<ReadingHistoryItem[]> => {
   try {
-    const historyJson = await AsyncStorage.getItem(STORAGE_KEYS.READING_HISTORY);
-    return historyJson ? JSON.parse(historyJson) : [];
+    const readings = await AsyncStorage.getItem(STORAGE_KEY);
+    return readings ? JSON.parse(readings) : [];
   } catch (error) {
-    console.error('Error getting reading history:', error);
+    console.error('Okumalar alınamadı:', error);
     return [];
   }
 };
 
-/**
- * Favorilere ekleme/çıkarma
- */
-export const toggleReadingFavorite = async (readingId: string): Promise<void> => {
-  try {
-    const history = await getReadingHistory();
-    const updatedHistory = history.map(reading => 
-      reading.id === readingId 
-        ? { ...reading, isFavorite: !reading.isFavorite }
-        : reading
-    );
-    
-    await AsyncStorage.setItem(
-      STORAGE_KEYS.READING_HISTORY, 
-      JSON.stringify(updatedHistory)
-    );
-  } catch (error) {
-    console.error('Error toggling favorite:', error);
-    throw error;
-  }
-};
-
-/**
- * Okuma silme
- */
-export const deleteReading = async (readingId: string): Promise<void> => {
-  try {
-    const history = await getReadingHistory();
-    const updatedHistory = history.filter(reading => reading.id !== readingId);
-    
-    await AsyncStorage.setItem(
-      STORAGE_KEYS.READING_HISTORY, 
-      JSON.stringify(updatedHistory)
-    );
-  } catch (error) {
-    console.error('Error deleting reading:', error);
-    throw error;
-  }
-};
-
-/**
- * Filtrelenmiş okuma geçmişi getir
- */
-export const getFilteredReadings = async (filters: {
-  favoritesOnly?: boolean;
-  dateFrom?: string;
-  dateTo?: string;
-  spreadType?: string;
-}): Promise<ReadingHistoryItem[]> => {
-  try {
-    let history = await getReadingHistory();
-    
-    // Favoriler filtresi
-    if (filters.favoritesOnly) {
-      history = history.filter(reading => reading.isFavorite);
-    }
-    
-    // Tarih aralığı filtresi
-    if (filters.dateFrom) {
-      const fromDate = new Date(filters.dateFrom);
-      history = history.filter(reading => new Date(reading.createdAt) >= fromDate);
-    }
-    
-    if (filters.dateTo) {
-      const toDate = new Date(filters.dateTo);
-      history = history.filter(reading => new Date(reading.createdAt) <= toDate);
-    }
-    
-    // Spread türü filtresi
-    if (filters.spreadType) {
-      history = history.filter(reading => 
-        reading.spreadType?.name === filters.spreadType
-      );
-    }
-    
-    return history;
-  } catch (error) {
-    console.error('Error filtering readings:', error);
-    return [];
-  }
-};
-
-/**
- * Sadece favori okumalarını getir
- */
+// Favori okumaları getir
 export const getFavoriteReadings = async (): Promise<ReadingHistoryItem[]> => {
   try {
-    const history = await getReadingHistory();
-    return history.filter(reading => reading.isFavorite);
+    const allReadings = await getReadingHistory();
+    return allReadings.filter(reading => reading.isFavorite);
   } catch (error) {
-    console.error('Error getting favorite readings:', error);
+    console.error('Favori okumalar alınamadı:', error);
     return [];
   }
 };
 
-/**
- * Tarih aralığına göre okuma getir
- */
-export const getReadingsByDateRange = async (
-  startDate: Date, 
-  endDate: Date
-): Promise<ReadingHistoryItem[]> => {
+// Favori durumunu değiştir
+export const toggleReadingFavorite = async (readingId: string): Promise<void> => {
   try {
-    const history = await getReadingHistory();
-    
-    return history.filter(reading => {
-      const readingDate = new Date(reading.createdAt);
-      return readingDate >= startDate && readingDate <= endDate;
+    const readings = await getReadingHistory();
+    const updatedReadings = readings.map(reading => {
+      if (reading.id === readingId) {
+        return { ...reading, isFavorite: !reading.isFavorite };
+      }
+      return reading;
     });
+    
+    await AsyncStorage.setItem(STORAGE_KEY, JSON.stringify(updatedReadings));
   } catch (error) {
-    console.error('Error getting readings by date range:', error);
-    return [];
+    console.error('Favori durumu değiştirilemedi:', error);
+    throw error;
   }
 };
 
-/**
- * Bu hafta yapılan okumalar
- */
-export const getThisWeekReadings = async (): Promise<ReadingHistoryItem[]> => {
-  const now = new Date();
-  const weekStart = new Date(now.setDate(now.getDate() - now.getDay()));
-  const weekEnd = new Date(now.setDate(now.getDate() - now.getDay() + 6));
-  
-  return getReadingsByDateRange(weekStart, weekEnd);
-};
-
-/**
- * Bu ay yapılan okumalar
- */
-export const getThisMonthReadings = async (): Promise<ReadingHistoryItem[]> => {
-  const now = new Date();
-  const monthStart = new Date(now.getFullYear(), now.getMonth(), 1);
-  const monthEnd = new Date(now.getFullYear(), now.getMonth() + 1, 0);
-  
-  return getReadingsByDateRange(monthStart, monthEnd);
-};
-
-/**
- * Kullanıcı istatistiklerini güncelle
- */
-const updateUserStats = async (newReading: ReadingHistoryItem): Promise<void> => {
+// Okuma sil
+export const deleteReading = async (readingId: string): Promise<void> => {
   try {
-    const currentStats = await getUserStats();
-    const history = await getReadingHistory();
+    const readings = await getReadingHistory();
+    const filteredReadings = readings.filter(reading => reading.id !== readingId);
+    await AsyncStorage.setItem(STORAGE_KEY, JSON.stringify(filteredReadings));
+  } catch (error) {
+    console.error('Okuma silinemedi:', error);
+    throw error;
+  }
+};
+
+// Kullanıcı istatistiklerini getir
+export const getUserStats = async (): Promise<UserStats> => {
+  try {
+    const readings = await getReadingHistory();
     
-    const readingMonth = new Date(newReading.createdAt).toISOString().slice(0, 7); // YYYY-MM
-    const favoriteCount = history.filter(r => r.isFavorite).length;
+    if (readings.length === 0) {
+      return {
+        totalReadings: 0,
+        favoriteReadings: 0,
+        streakDays: 0,
+        mostUsedSpread: 'Henüz okuma yok',
+        lastReadingDate: null
+      };
+    }
     
-    // En çok kullanılan spread'i bul
+    // En çok kullanılan spread
     const spreadCounts: Record<string, number> = {};
-    history.forEach(reading => {
-      const spreadName = reading.spreadType?.name || 'Klasik Okuma';
+    readings.forEach(reading => {
+      const spreadName = reading.spreadType?.name || 'Klasik';
       spreadCounts[spreadName] = (spreadCounts[spreadName] || 0) + 1;
     });
     
     const mostUsedSpread = Object.entries(spreadCounts)
-      .sort(([,a], [,b]) => b - a)[0]?.[0] || 'Klasik Okuma';
+      .sort(([, a], [, b]) => b - a)[0][0];
     
-    const updatedStats: UserStats = {
-      totalReadings: history.length,
-      favoriteReadings: favoriteCount,
-      lastReadingDate: newReading.createdAt,
-      mostUsedSpread,
-      streakDays: calculateStreak(currentStats.lastReadingDate, newReading.createdAt),
-      readingsByMonth: {
-        ...currentStats.readingsByMonth,
-        [readingMonth]: (currentStats.readingsByMonth[readingMonth] || 0) + 1
+    // Streak hesapla
+    const today = new Date();
+    const lastReading = new Date(readings[0].createdAt);
+    const daysSinceLastReading = Math.floor((today.getTime() - lastReading.getTime()) / (1000 * 60 * 60 * 24));
+    
+    let streakDays = 0;
+    if (daysSinceLastReading <= 1) {
+      streakDays = 1;
+      
+      for (let i = 1; i < readings.length; i++) {
+        const currentDate = new Date(readings[i].createdAt);
+        const prevDate = new Date(readings[i - 1].createdAt);
+        const daysDiff = Math.floor((prevDate.getTime() - currentDate.getTime()) / (1000 * 60 * 60 * 24));
+        
+        if (daysDiff <= 1) {
+          streakDays++;
+        } else {
+          break;
+        }
       }
-    };
-    
-    await AsyncStorage.setItem(
-      STORAGE_KEYS.USER_STATS, 
-      JSON.stringify(updatedStats)
-    );
-    
-  } catch (error) {
-    console.error('Error updating user stats:', error);
-  }
-};
-
-/**
- * Kullanıcı istatistiklerini getir
- */
-export const getUserStats = async (): Promise<UserStats> => {
-  try {
-    const statsJson = await AsyncStorage.getItem(STORAGE_KEYS.USER_STATS);
-    
-    if (statsJson) {
-      return JSON.parse(statsJson);
     }
     
-    // Varsayılan istatistikler
+    return {
+      totalReadings: readings.length,
+      favoriteReadings: readings.filter(r => r.isFavorite).length,
+      streakDays,
+      mostUsedSpread,
+      lastReadingDate: readings[0]?.createdAt || null
+    };
+  } catch (error) {
+    console.error('İstatistikler alınamadı:', error);
     return {
       totalReadings: 0,
       favoriteReadings: 0,
       streakDays: 0,
-      lastReadingDate: '',
-      mostUsedSpread: 'Klasik Okuma',
-      readingsByMonth: {}
-    };
-  } catch (error) {
-    console.error('Error getting user stats:', error);
-    return {
-      totalReadings: 0,
-      favoriteReadings: 0,
-      streakDays: 0,
-      lastReadingDate: '',
-      mostUsedSpread: 'Klasik Okuma',
-      readingsByMonth: {}
+      mostUsedSpread: 'Henüz okuma yok',
+      lastReadingDate: null
     };
   }
 };
 
-/**
- * Günlük streak hesaplama
- */
-const calculateStreak = (lastReadingDate: string, newReadingDate: string): number => {
-  if (!lastReadingDate) return 1;
-  
-  const lastDate = new Date(lastReadingDate);
-  const newDate = new Date(newReadingDate);
-  
-  // Günlük farkı hesapla
-  const diffTime = Math.abs(newDate.getTime() - lastDate.getTime());
-  const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
-  
-  // Aynı gün ise streak aynı kalır
-  if (diffDays === 0) return 1;
-  
-  // Ardışık günler ise streak artar
-  if (diffDays === 1) return 2;
-  
-  // Daha uzun ara ise streak sıfırlanır
-  return 1;
-};
-
-/**
- * Spread türü bazında istatistik
- */
-export const getSpreadStatistics = async (): Promise<Record<string, number>> => {
-  try {
-    const history = await getReadingHistory();
-    const spreadCounts: Record<string, number> = {};
-    
-    history.forEach(reading => {
-      const spreadName = reading.spreadType?.name || 'Klasik Okuma';
-      spreadCounts[spreadName] = (spreadCounts[spreadName] || 0) + 1;
-    });
-    
-    return spreadCounts;
-  } catch (error) {
-    console.error('Error getting spread statistics:', error);
-    return {};
-  }
-};
-
-/**
- * Aylık okuma istatistikleri
- */
-export const getMonthlyStatistics = async (): Promise<Record<string, number>> => {
-  try {
-    const history = await getReadingHistory();
-    const monthCounts: Record<string, number> = {};
-    
-    history.forEach(reading => {
-      const month = new Date(reading.createdAt).toISOString().slice(0, 7);
-      monthCounts[month] = (monthCounts[month] || 0) + 1;
-    });
-    
-    return monthCounts;
-  } catch (error) {
-    console.error('Error getting monthly statistics:', error);
-    return {};
-  }
-};
-
-/**
- * Tüm geçmişi temizle
- */
+// Tüm geçmişi temizle
 export const clearAllHistory = async (): Promise<void> => {
   try {
-    await AsyncStorage.removeItem(STORAGE_KEYS.READING_HISTORY);
-    await AsyncStorage.removeItem(STORAGE_KEYS.USER_STATS);
-    console.log('All history cleared successfully');
+    await AsyncStorage.removeItem(STORAGE_KEY);
   } catch (error) {
-    console.error('Error clearing history:', error);
+    console.error('Geçmiş temizlenemedi:', error);
     throw error;
   }
-};
-
-/**
- * Favori durumunu toggle et (alias function)
- */
-export const toggleFavoriteReading = async (readingId: string): Promise<void> => {
-  return toggleReadingFavorite(readingId);
 };

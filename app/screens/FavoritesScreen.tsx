@@ -4,103 +4,87 @@ import React, { useState, useCallback } from 'react';
 import {
   View,
   Text,
+  TouchableOpacity,
   StyleSheet,
   FlatList,
-  TouchableOpacity,
-  RefreshControl,
-  Dimensions
+  Platform,
+  Image,
+  ScrollView
 } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useNavigation, useFocusEffect } from '@react-navigation/native';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 
-import { getFavoriteReadings, toggleReadingFavorite } from '../services/readingHistoryService';
-import type { ReadingHistoryItem } from '../services/readingHistoryService';
-import { CATEGORY_COLORS } from '../constants/spreadTypes';
+import {
+  ReadingHistoryItem,
+  getFavoriteReadings,
+  toggleReadingFavorite
+} from '../services/readingHistoryService';
 import type { RootStackParamList } from '../types/navigation';
+import { MAJOR_ARCANA, getCardImage } from '../constants/tarotDeck';
+import MysticConfirmationModal from '../components/MysticConfirmationModal';
 
-const { width } = Dimensions.get('window');
-
-type FavoritesScreenNavigationProp = NativeStackNavigationProp<RootStackParamList>;
+const cardDataMap = new Map(MAJOR_ARCANA.map(card => [card.name, card]));
+type FavoritesScreenNavigationProp = NativeStackNavigationProp<RootStackParamList, 'Favorites'>;
 
 const FavoritesScreen: React.FC = () => {
   const navigation = useNavigation<FavoritesScreenNavigationProp>();
-  const [favorites, setFavorites] = useState<ReadingHistoryItem[]>([]);
-  const [refreshing, setRefreshing] = useState(false);
+  
+  const [favoriteReadings, setFavoriteReadings] = useState<ReadingHistoryItem[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+  const [isModalVisible, setModalVisible] = useState(false);
+  const [readingToUnfavorite, setReadingToUnfavorite] = useState<string | null>(null);
 
-  useFocusEffect(
-    useCallback(() => {
-      loadFavorites();
-    }, [])
-  );
+  useFocusEffect(useCallback(() => { loadFavoriteReadings(); }, []));
 
-  const loadFavorites = async () => {
+  const loadFavoriteReadings = async () => {
     try {
       setIsLoading(true);
-      const favs = await getFavoriteReadings();
-      setFavorites(favs);
+      const favorites = await getFavoriteReadings();
+      setFavoriteReadings(favorites);
     } catch (error) {
-      console.error('Favoriler yüklenemedi:', error);
+      console.error('Favori okumalar yüklenemedi:', error);
     } finally {
       setIsLoading(false);
     }
   };
 
-  const onRefresh = async () => {
-    setRefreshing(true);
-    await loadFavorites();
-    setRefreshing(false);
+  const handleRemoveFavorite = (readingId: string) => {
+    setReadingToUnfavorite(readingId);
+    setModalVisible(true);
   };
 
-  const handleRemoveFavorite = async (readingId: string) => {
+  const confirmUnfavorite = async () => {
+    if (!readingToUnfavorite) return;
     try {
-      await toggleReadingFavorite(readingId);
-      await loadFavorites();
+      await toggleReadingFavorite(readingToUnfavorite);
+      setModalVisible(false);
+      await loadFavoriteReadings();
     } catch (error) {
-      console.error('Favori kaldırılamadı:', error);
+      console.error('Favorilerden çıkarılamadı:', error);
+      setModalVisible(false);
+    } finally {
+      setReadingToUnfavorite(null);
     }
   };
 
   const handleReadingPress = (reading: ReadingHistoryItem) => {
-    // @ts-ignore - Navigation typing issue
-    navigation.navigate('Geçmiş', {
-      screen: 'ReadingDetail',
-      params: { reading }
-    });
+    navigation.navigate('ReadingDetail', { reading });
   };
-
-  const renderFavoriteItem = ({ item }: { item: ReadingHistoryItem }) => {
-    const spreadColor = item.spreadType 
-      ? CATEGORY_COLORS[item.spreadType.category]
-      : CATEGORY_COLORS.general;
-
-    const readingDate = new Date(item.createdAt);
-    const formattedDate = readingDate.toLocaleDateString('tr-TR', {
-      day: 'numeric',
-      month: 'short',
-      year: 'numeric'
-    });
-
+  
+  const renderFavoriteCard = ({ item }: { item: ReadingHistoryItem }) => {
     return (
-      <TouchableOpacity 
+      <TouchableOpacity
         style={styles.favoriteCard}
         onPress={() => handleReadingPress(item)}
         activeOpacity={0.8}
       >
         <LinearGradient
-          colors={[spreadColor.primary, spreadColor.light]}
+          colors={['rgba(74, 4, 78, 0.3)', 'rgba(74, 4, 78, 0.5)']}
           style={styles.cardGradient}
         >
           <View style={styles.cardHeader}>
-            <View style={styles.cardInfo}>
-              <Text style={styles.cardTitle} numberOfLines={1}>
-                {item.readingTitle}
-              </Text>
-              <Text style={styles.cardQuestion} numberOfLines={2}>
-                "{item.question}"
-              </Text>
-            </View>
+            <Text style={styles.cardQuestion} numberOfLines={2}>"{item.question}"</Text>
             <TouchableOpacity
               style={styles.favoriteButton}
               onPress={() => handleRemoveFavorite(item.id)}
@@ -109,17 +93,25 @@ const FavoritesScreen: React.FC = () => {
             </TouchableOpacity>
           </View>
 
-          <View style={styles.cardMeta}>
-            <View style={styles.spreadBadge}>
-              <Text style={styles.spreadText}>
-                {item.spreadType?.name || 'Klasik'}
-              </Text>
-            </View>
-            <Text style={styles.dateText}>{formattedDate}</Text>
-          </View>
+          <ScrollView
+            horizontal
+            showsHorizontalScrollIndicator={false}
+            contentContainerStyle={styles.cardImageGallery}
+          >
+            {item.cards.map((cardName, index) => {
+              const card = cardDataMap.get(cardName);
+              if (!card) return null;
+              const cardImage = getCardImage(card.imageName);
+              return (
+                <View key={index} style={styles.miniCardContainer}>
+                  <Image source={cardImage} style={styles.miniCardImage} />
+                </View>
+              );
+            })}
+          </ScrollView>
 
-          <View style={styles.cardPreview}>
-            <Text style={styles.previewText} numberOfLines={2}>
+          <View style={styles.wisdomContainer}>
+            <Text style={styles.wisdomText} numberOfLines={3}>
               {item.summary}
             </Text>
           </View>
@@ -130,42 +122,38 @@ const FavoritesScreen: React.FC = () => {
 
   const renderEmptyState = () => (
     <View style={styles.emptyState}>
-      <Text style={styles.emptyIcon}>⭐</Text>
-      <Text style={styles.emptyTitle}>Henüz Favoriniz Yok</Text>
-      <Text style={styles.emptyText}>
-        Beğendiğiniz okumaları favori yaparak{'\n'}buradan kolayca erişebilirsiniz
+      <Text style={styles.emptyStateIcon}>⭐</Text>
+      <Text style={styles.emptyStateTitle}>Henüz favori okumanız yok</Text>
+      <Text style={styles.emptyStateText}>
+        Beğendiğiniz okumaları favorilere ekleyerek buradan kolayca erişebilirsiniz
       </Text>
     </View>
   );
 
   return (
-    <LinearGradient
-      colors={['#1e3c72', '#2a5298', '#1e3c72']}
-      style={styles.container}
-    >
-      <View style={styles.header}>
-        <Text style={styles.title}>Favorilerim</Text>
-        <Text style={styles.subtitle}>
-          {favorites.length} favori okuma
-        </Text>
-      </View>
+    <>
+      <LinearGradient colors={['#1d112b', '#2b173f', '#1d112b']} style={styles.container}>
+        <FlatList
+          data={favoriteReadings}
+          renderItem={renderFavoriteCard}
+          keyExtractor={(item) => item.id}
+          contentContainerStyle={styles.listContainer}
+          showsVerticalScrollIndicator={false}
+          ListEmptyComponent={renderEmptyState}
+        />
+      </LinearGradient>
 
-      <FlatList
-        data={favorites}
-        renderItem={renderFavoriteItem}
-        keyExtractor={(item) => item.id}
-        contentContainerStyle={styles.listContainer}
-        showsVerticalScrollIndicator={false}
-        refreshControl={
-          <RefreshControl 
-            refreshing={refreshing} 
-            onRefresh={onRefresh}
-            tintColor="#E8B923"
-          />
-        }
-        ListEmptyComponent={renderEmptyState}
+      <MysticConfirmationModal
+        visible={isModalVisible}
+        onClose={() => setModalVisible(false)}
+        title="Favorilerden Çıkar"
+        subtitle="Bu özel anıyı favorileriniz arasından kaldırmak istediğinize emin misiniz?"
+        buttons={[
+          { text: 'İptal', onPress: () => setModalVisible(false), style: 'default' },
+          { text: 'Çıkar', onPress: confirmUnfavorite, style: 'destructive' },
+        ]}
       />
-    </LinearGradient>
+    </>
   );
 };
 
@@ -173,146 +161,95 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
   },
-  
-  header: {
-    paddingHorizontal: 20,
-    paddingTop: 20,
-    paddingBottom: 20,
-    alignItems: 'center',
-  },
-  
-  title: {
-    fontSize: 28,
-    fontWeight: 'bold',
-    color: '#ffffff',
-    marginBottom: 4,
-  },
-  
-  subtitle: {
-    fontSize: 14,
-    color: 'rgba(255, 255, 255, 0.7)',
-  },
-  
   listContainer: {
     paddingHorizontal: 20,
+    paddingTop: 20,
     paddingBottom: 100,
   },
-  
   favoriteCard: {
     marginBottom: 16,
     borderRadius: 16,
     overflow: 'hidden',
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.2,
-    shadowRadius: 8,
-    elevation: 6,
+    borderWidth: 1,
+    borderColor: '#701a75',
   },
-  
   cardGradient: {
     padding: 16,
   },
-  
   cardHeader: {
     flexDirection: 'row',
     justifyContent: 'space-between',
-    marginBottom: 12,
+    alignItems: 'flex-start',
+    marginBottom: 16,
   },
-  
-  cardInfo: {
+  cardQuestion: {
     flex: 1,
-    marginRight: 12,
-  },
-  
-  cardTitle: {
     fontSize: 18,
     fontWeight: 'bold',
-    color: '#ffffff',
-    marginBottom: 4,
+    // DEĞİŞİKLİK: Sorgu başlığı artık markamızın altın rengi
+    color: '#d4af37',
+    fontFamily: Platform.select({ ios: 'Georgia-Bold', android: 'serif' }),
+    lineHeight: 24,
+    marginRight: 10,
   },
-  
-  cardQuestion: {
-    fontSize: 14,
-    color: 'rgba(255, 255, 255, 0.9)',
-    fontStyle: 'italic',
-    lineHeight: 18,
-  },
-  
   favoriteButton: {
-    width: 36,
-    height: 36,
-    borderRadius: 18,
-    backgroundColor: 'rgba(255, 255, 255, 0.2)',
-    justifyContent: 'center',
-    alignItems: 'center',
+    padding: 4,
   },
-  
   favoriteIcon: {
-    fontSize: 20,
-    color: '#FFD700',
+    fontSize: 22,
+    color: '#d4af37',
   },
-  
-  cardMeta: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    marginBottom: 12,
+  cardImageGallery: {
+    paddingBottom: 16,
+    gap: 8,
   },
-  
-  spreadBadge: {
-    backgroundColor: 'rgba(255, 255, 255, 0.2)',
-    paddingHorizontal: 12,
-    paddingVertical: 4,
-    borderRadius: 12,
+  miniCardContainer: {
+    width: 60,
+    aspectRatio: 0.6,
+    borderRadius: 6,
+    overflow: 'hidden',
+    borderWidth: 1,
+    borderColor: 'rgba(212, 175, 55, 0.5)',
   },
-  
-  spreadText: {
-    fontSize: 12,
-    color: '#ffffff',
-    fontWeight: '600',
+  miniCardImage: {
+    width: '100%',
+    height: '100%',
   },
-  
-  dateText: {
-    fontSize: 12,
-    color: 'rgba(255, 255, 255, 0.7)',
+  wisdomContainer: {
+    borderTopWidth: 1,
+    borderTopColor: 'rgba(212, 175, 55, 0.2)',
+    paddingTop: 12,
   },
-  
-  cardPreview: {
-    backgroundColor: 'rgba(0, 0, 0, 0.2)',
-    padding: 12,
-    borderRadius: 8,
+  wisdomText: {
+    fontSize: 14,
+    color: 'rgba(243, 232, 255, 0.8)',
+    fontFamily: Platform.select({ ios: 'Georgia-Italic', android: 'serif' }),
+    fontStyle: 'italic',
+    lineHeight: 20,
   },
-  
-  previewText: {
-    fontSize: 13,
-    color: 'rgba(255, 255, 255, 0.9)',
-    lineHeight: 18,
-  },
-  
   emptyState: {
-    flex: 1,
-    justifyContent: 'center',
     alignItems: 'center',
-    paddingTop: 100,
+    paddingVertical: 60,
+    paddingHorizontal: 40,
+    marginTop: '30%',
   },
-  
-  emptyIcon: {
+  emptyStateIcon: {
     fontSize: 64,
     marginBottom: 16,
   },
-  
-  emptyTitle: {
+  emptyStateTitle: {
     fontSize: 20,
     fontWeight: 'bold',
-    color: '#ffffff',
+    color: '#f3e8ff',
     marginBottom: 8,
-  },
-  
-  emptyText: {
-    fontSize: 14,
-    color: 'rgba(255, 255, 255, 0.7)',
     textAlign: 'center',
-    lineHeight: 20,
+    fontFamily: Platform.select({ ios: 'Georgia', android: 'serif' }),
+  },
+  emptyStateText: {
+    fontSize: 16,
+    color: 'rgba(243, 232, 255, 0.8)',
+    textAlign: 'center',
+    lineHeight: 24,
   },
 });
 

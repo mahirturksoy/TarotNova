@@ -1,132 +1,405 @@
-// Spread tiplerinin tanımları
+// app/constants/spreadTypes.ts
+
+export type SpreadCategory = 'general' | 'love' | 'career' | 'spiritual' | 'decision' | 'timing';
 
 export interface SpreadPosition {
-  id: string;
   name: string;
   description: string;
-  x: number; // Layout pozisyonu (yüzde olarak)
-  y: number;
 }
 
 export interface SpreadType {
   id: string;
   name: string;
-  description: string;
+  category: SpreadCategory;
   cardCount: number;
+  description: string;
   positions: SpreadPosition[];
-  category: 'general' | 'love' | 'career' | 'spiritual';
-  difficulty: 'beginner' | 'intermediate' | 'advanced';
-  estimatedTime: string;
+  difficulty: 'Kolay' | 'Orta' | 'Zor';
 }
 
-// Spread pozisyonları tanımları
-export const SPREAD_POSITIONS = {
-  // 3 Kart - Geçmiş, Şimdi, Gelecek
-  pastPresentFuture: [
-    { id: 'past', name: 'Geçmiş', description: 'Geçmişten gelen etkiler', x: 20, y: 50 },
-    { id: 'present', name: 'Şimdi', description: 'Mevcut durum', x: 50, y: 50 },
-    { id: 'future', name: 'Gelecek', description: 'Potansiyel sonuçlar', x: 80, y: 50 }
-  ],
+export interface CategoryInfo {
+  id: SpreadCategory;
+  name: string;
+  description: string;
+}
 
-  // 5 Kart - Aşk Spread'i
-  loveSpread: [
-    { id: 'you', name: 'Sen', description: 'Senin durumun', x: 30, y: 20 },
-    { id: 'partner', name: 'Karşı Taraf', description: 'Onun durumu', x: 70, y: 20 },
-    { id: 'relationship', name: 'İlişki', description: 'İlişkinizin durumu', x: 50, y: 50 },
-    { id: 'challenge', name: 'Zorluk', description: 'Karşılaştığınız zorluk', x: 20, y: 80 },
-    { id: 'outcome', name: 'Sonuç', description: 'Potansiyel gelecek', x: 80, y: 80 }
-  ],
-
-  // 4 Kart - Kariyer Spread'i
-  careerSpread: [
-    { id: 'currentJob', name: 'Mevcut İş', description: 'Şu anki durumunuz', x: 25, y: 30 },
-    { id: 'skills', name: 'Yetenekler', description: 'Güçlü yanlarınız', x: 75, y: 30 },
-    { id: 'opportunity', name: 'Fırsat', description: 'Gelecek fırsatlar', x: 25, y: 70 },
-    { id: 'advice', name: 'Tavsiye', description: 'Yapmanız gerekenler', x: 75, y: 70 }
-  ],
-
-  // 6 Kart - Kelta Haçı (Basitleştirilmiş)
-  celticCross: [
-    { id: 'present', name: 'Şimdi', description: 'Mevcut durum', x: 50, y: 50 },
-    { id: 'challenge', name: 'Zorluk', description: 'Karşılaştığınız zorluk', x: 50, y: 30 },
-    { id: 'past', name: 'Geçmiş', description: 'Geçmiş etkiler', x: 30, y: 50 },
-    { id: 'future', name: 'Gelecek', description: 'Olası gelecek', x: 70, y: 50 },
-    { id: 'above', name: 'Hedef', description: 'Ulaşmak istediğiniz', x: 50, y: 20 },
-    { id: 'outcome', name: 'Sonuç', description: 'Final sonuç', x: 50, y: 80 }
-  ]
-};
-
-// Mevcut spread tipleri
-export const SPREAD_TYPES: SpreadType[] = [
+export const SPREAD_CATEGORIES: CategoryInfo[] = [
   {
-    id: 'past-present-future',
-    name: 'Geçmiş - Şimdi - Gelecek',
-    description: 'En popüler 3 kartlık okuma. Zaman çizgisi boyunca durumunuzu inceler.',
-    cardCount: 3,
-    positions: SPREAD_POSITIONS.pastPresentFuture,
-    category: 'general',
-    difficulty: 'beginner',
-    estimatedTime: '5-8 dk'
+    id: 'general',
+    name: 'Genel',
+    description: 'Hayatın genel akışı ve günlük sorular için ideal açılımlar'
   },
   {
-    id: 'love-relationship',
-    name: 'Aşk ve İlişki',
-    description: 'Romantik ilişkinizi derinlemesine analiz eden 5 kartlık özel okuma.',
-    cardCount: 5,
-    positions: SPREAD_POSITIONS.loveSpread,
-    category: 'love',
-    difficulty: 'intermediate',
-    estimatedTime: '8-12 dk'
+    id: 'love',
+    name: 'Aşk',
+    description: 'İlişkiler, duygusal bağlar ve romantik sorular için'
   },
   {
-    id: 'career-path',
-    name: 'Kariyer Yolu',
-    description: 'İş hayatınız ve kariyerinizle ilgili rehberlik sunan 4 kartlık okuma.',
-    cardCount: 4,
-    positions: SPREAD_POSITIONS.careerSpread,
-    category: 'career',
-    difficulty: 'intermediate',
-    estimatedTime: '6-10 dk'
+    id: 'career',
+    name: 'Kariyer',
+    description: 'İş hayatı, kariyer gelişimi ve maddi konular için'
   },
   {
-    id: 'celtic-cross-simple',
-    name: 'Kelt Haçı (Basit)',
-    description: 'Kapsamlı durum analizi için gelişmiş 6 kartlık okuma.',
-    cardCount: 6,
-    positions: SPREAD_POSITIONS.celticCross,
-    category: 'spiritual',
-    difficulty: 'advanced',
-    estimatedTime: '12-15 dk'
+    id: 'spiritual',
+    name: 'Ruhsal',
+    description: 'Manevi gelişim, içsel yolculuk ve ruhsal sorular için'
+  },
+  {
+    id: 'decision',
+    name: 'Karar',
+    description: 'Önemli kararlar ve seçimler için yol gösterici açılımlar'
+  },
+  {
+    id: 'timing',
+    name: 'Zamanlama',
+    description: 'Belirli zaman dilimleri için öngörü ve planlama'
   }
 ];
 
-// Kategori renkleri
-export const CATEGORY_COLORS = {
+export const CATEGORY_COLORS: Record<SpreadCategory | 'default', {
+  primary: string;
+  light: string;
+  background: string;
+}> = {
   general: {
-    primary: '#6B46C1',
+    primary: '#8B5CF6',
     light: '#A78BFA',
-    background: 'rgba(107, 70, 193, 0.1)'
+    background: 'rgba(139, 92, 246, 0.1)'
   },
   love: {
-    primary: '#DC2626',
-    light: '#F87171',
-    background: 'rgba(220, 38, 38, 0.1)'
+    primary: '#EC4899',
+    light: '#F472B6',
+    background: 'rgba(236, 72, 153, 0.1)'
   },
   career: {
-    primary: '#059669',
+    primary: '#10B981',
     light: '#34D399',
-    background: 'rgba(5, 150, 105, 0.1)'
+    background: 'rgba(16, 185, 129, 0.1)'
   },
   spiritual: {
-    primary: '#7C2D12',
-    light: '#FB923C',
-    background: 'rgba(124, 45, 18, 0.1)'
+    primary: '#F59E0B',
+    light: '#FBBF24',
+    background: 'rgba(245, 158, 11, 0.1)'
+  },
+  decision: {
+    primary: '#6366F1',
+    light: '#818CF8',
+    background: 'rgba(99, 102, 241, 0.1)'
+  },
+  timing: {
+    primary: '#14B8A6',
+    light: '#2DD4BF',
+    background: 'rgba(20, 184, 166, 0.1)'
+  },
+  default: {
+    primary: '#8B5CF6',
+    light: '#A78BFA',
+    background: 'rgba(139, 92, 246, 0.1)'
   }
 };
 
-// Zorluk seviyeleri
-export const DIFFICULTY_LABELS = {
-  beginner: { label: 'Başlangıç', color: '#10B981' },
-  intermediate: { label: 'Orta', color: '#F59E0B' },
-  advanced: { label: 'İleri', color: '#EF4444' }
-};
+export const SPREAD_TYPES: SpreadType[] = [
+  // Genel
+  {
+    id: 'past-present-future',
+    name: 'Geçmiş - Şimdi - Gelecek',
+    category: 'general',
+    cardCount: 3,
+    description: 'Durumunuzun zaman içindeki gelişimini gösterir',
+    positions: [
+      { name: 'Geçmiş', description: 'Sizi bu noktaya getiren olaylar' },
+      { name: 'Şimdi', description: 'Mevcut durumunuz' },
+      { name: 'Gelecek', description: 'Muhtemel sonuç' }
+    ],
+    difficulty: 'Kolay'
+  },
+  {
+    id: 'single-card',
+    name: 'Tek Kart',
+    category: 'general',
+    cardCount: 1,
+    description: 'Günlük rehberlik veya hızlı cevap için',
+    positions: [
+      { name: 'Mesaj', description: 'Günün mesajı' }
+    ],
+    difficulty: 'Kolay'
+  },
+  {
+    id: 'celtic-cross',
+    name: 'Kelt Haçı',
+    category: 'general',
+    cardCount: 10,
+    description: 'En kapsamlı ve detaylı tarot açılımı',
+    positions: [
+      { name: 'Mevcut Durum', description: 'Şu anki durumunuz' },
+      { name: 'Zorluk/Çapraz', description: 'Karşılaştığınız engel' },
+      { name: 'Uzak Geçmiş', description: 'Köklerdeki sebepler' },
+      { name: 'Yakın Geçmiş', description: 'Yakın zamandaki olaylar' },
+      { name: 'Olası Sonuç', description: 'Muhtemel gelişme' },
+      { name: 'Yakın Gelecek', description: 'Yakında olacaklar' },
+      { name: 'Yaklaşımınız', description: 'Sizin tutumunuz' },
+      { name: 'Dış Etkenler', description: 'Çevresel faktörler' },
+      { name: 'Umutlar ve Korkular', description: 'İç dünyanız' },
+      { name: 'Final Sonucu', description: 'Nihai sonuç' }
+    ],
+    difficulty: 'Zor'
+  },
+  {
+    id: 'yes-no',
+    name: 'Evet/Hayır',
+    category: 'general',
+    cardCount: 3,
+    description: 'Net evet veya hayır cevabı için',
+    positions: [
+      { name: 'Evet Faktörleri', description: 'Olumlu yönler' },
+      { name: 'Hayır Faktörleri', description: 'Olumsuz yönler' },
+      { name: 'Sonuç', description: 'Nihai cevap' }
+    ],
+    difficulty: 'Kolay'
+  },
+
+  // Aşk
+  {
+    id: 'love-cross',
+    name: 'Aşk Haçı',
+    category: 'love',
+    cardCount: 6,
+    description: 'İlişkinizin derinlemesine analizi',
+    positions: [
+      { name: 'Siz', description: 'Sizin duygularınız ve durumunuz' },
+      { name: 'Partner', description: 'Partnerinizin duyguları ve durumu' },
+      { name: 'İlişkinin Temeli', description: 'İlişkinizin dayandığı temel' },
+      { name: 'Zorluklar', description: 'Karşılaştığınız engeller' },
+      { name: 'Güçlü Yönler', description: 'İlişkinizin güçlü yanları' },
+      { name: 'Potansiyel', description: 'İlişkinin geleceği' }
+    ],
+    difficulty: 'Orta'
+  },
+  {
+    id: 'relationship-check',
+    name: 'İlişki Kontrolü',
+    category: 'love',
+    cardCount: 5,
+    description: 'Mevcut ilişkinizin sağlık durumu',
+    positions: [
+      { name: 'Sizin Duygularınız', description: 'Kalbinizdekiler' },
+      { name: 'Partner Duyguları', description: 'Partnerinizin hissettikleri' },
+      { name: 'Bağlantı', description: 'Aranızdaki bağ' },
+      { name: 'Engeller', description: 'Aşılması gereken sorunlar' },
+      { name: 'Tavsiye', description: 'İlişki için öneriler' }
+    ],
+    difficulty: 'Orta'
+  },
+  {
+    id: 'soulmate',
+    name: 'Ruh Eşi',
+    category: 'love',
+    cardCount: 7,
+    description: 'Ruh eşinizi bulma yolculuğu',
+    positions: [
+      { name: 'Hazır mısınız?', description: 'Ruhsal hazırlık durumunuz' },
+      { name: 'Ne engel oluyor?', description: 'Aşılması gereken blokajlar' },
+      { name: 'Nerede buluşacaksınız?', description: 'Karşılaşma mekanı/durumu' },
+      { name: 'Nasıl tanıyacaksınız?', description: 'Tanıma işaretleri' },
+      { name: 'İlk izlenim', description: 'İlk karşılaşma enerjisi' },
+      { name: 'İlişkinin doğası', description: 'Bağınızın karakteri' },
+      { name: 'Zaman', description: 'Zamanlama ipuçları' }
+    ],
+    difficulty: 'Orta'
+  },
+
+  // Kariyer
+  {
+    id: 'career-path',
+    name: 'Kariyer Yolu',
+    category: 'career',
+    cardCount: 5,
+    description: 'Kariyer gelişiminiz için rehberlik',
+    positions: [
+      { name: 'Mevcut Pozisyon', description: 'Şu anki konumunuz' },
+      { name: 'Potansiyeliniz', description: 'Gizli yetenekleriniz' },
+      { name: 'Engeller', description: 'Aşmanız gereken zorluklar' },
+      { name: 'Fırsatlar', description: 'Yaklaşan olanaklar' },
+      { name: 'Sonraki Adım', description: 'Atmanız gereken adım' }
+    ],
+    difficulty: 'Orta'
+  },
+  {
+    id: 'work-situation',
+    name: 'İş Durumu',
+    category: 'career',
+    cardCount: 4,
+    description: 'Mevcut iş durumunuzun analizi',
+    positions: [
+      { name: 'Şu Anki Durum', description: 'İş yerindeki konumunuz' },
+      { name: 'Zorluklar', description: 'Karşılaştığınız problemler' },
+      { name: 'Destekler', description: 'Size yardımcı olan faktörler' },
+      { name: 'Sonuç', description: 'Muhtemel gelişme' }
+    ],
+    difficulty: 'Kolay'
+  },
+  {
+    id: 'financial',
+    name: 'Finansal Durum',
+    category: 'career',
+    cardCount: 5,
+    description: 'Maddi durumunuz ve finansal akış',
+    positions: [
+      { name: 'Mevcut Durum', description: 'Finansal konumunuz' },
+      { name: 'Gelir Kaynakları', description: 'Para girişleri' },
+      { name: 'Harcamalar', description: 'Para çıkışları' },
+      { name: 'Fırsatlar', description: 'Finansal olanaklar' },
+      { name: 'Finansal Tavsiye', description: 'Para yönetimi önerileri' }
+    ],
+    difficulty: 'Orta'
+  },
+
+  // Ruhsal
+  {
+    id: 'spiritual-growth',
+    name: 'Ruhsal Gelişim',
+    category: 'spiritual',
+    cardCount: 4,
+    description: 'Ruhsal yolculuğunuzda rehberlik',
+    positions: [
+      { name: 'Neredesiniz?', description: 'Ruhsal seviyeniz' },
+      { name: 'Öğrenilecek Ders', description: 'Hayat dersiniz' },
+      { name: 'Ruhsal Rehber Mesajı', description: 'Yüksek benliğinizden mesaj' },
+      { name: 'Sonraki Seviye', description: 'Ulaşacağınız bilinç hali' }
+    ],
+    difficulty: 'Orta'
+  },
+  {
+    id: 'chakra',
+    name: 'Çakra Açılımı',
+    category: 'spiritual',
+    cardCount: 7,
+    description: '7 çakranızın durumu',
+    positions: [
+      { name: 'Kök Çakra', description: 'Temel güvenlik ve hayatta kalma' },
+      { name: 'Sakral Çakra', description: 'Yaratıcılık ve duygular' },
+      { name: 'Solar Pleksus', description: 'Güç ve irade' },
+      { name: 'Kalp Çakra', description: 'Sevgi ve şefkat' },
+      { name: 'Boğaz Çakra', description: 'İletişim ve ifade' },
+      { name: 'Üçüncü Göz', description: 'Sezgi ve vizyon' },
+      { name: 'Taç Çakra', description: 'Manevi bağlantı' }
+    ],
+    difficulty: 'Zor'
+  },
+  {
+    id: 'moon-phases',
+    name: 'Ay Evreleri',
+    category: 'spiritual',
+    cardCount: 4,
+    description: 'Ay döngüsü ile uyumlu rehberlik',
+    positions: [
+      { name: 'Yeni Ay - Niyet', description: 'Yeni başlangıçlar' },
+      { name: 'İlk Dördün - Eylem', description: 'Harekete geçme zamanı' },
+      { name: 'Dolunay - Bereket', description: 'Hasat ve tamamlanma' },
+      { name: 'Son Dördün - Bırakma', description: 'Arınma ve temizlenme' }
+    ],
+    difficulty: 'Orta'
+  },
+
+  // Karar
+  {
+    id: 'decision-making',
+    name: 'Karar Verme',
+    category: 'decision',
+    cardCount: 5,
+    description: 'Önemli kararlar için derinlemesine analiz',
+    positions: [
+      { name: 'Durum', description: 'Mevcut durum analizi' },
+      { name: 'Seçenek 1', description: 'İlk seçeneğin enerjisi' },
+      { name: 'Seçenek 1 Sonucu', description: 'İlk seçeneğin sonuçları' },
+      { name: 'Seçenek 2', description: 'İkinci seçeneğin enerjisi' },
+      { name: 'Seçenek 2 Sonucu', description: 'İkinci seçeneğin sonuçları' }
+    ],
+    difficulty: 'Orta'
+  },
+  {
+    id: 'two-paths',
+    name: 'İki Yol',
+    category: 'decision',
+    cardCount: 6,
+    description: 'İki seçenek arasında karar verme',
+    positions: [
+      { name: 'Siz', description: 'Sizin enerjiniz' },
+      { name: 'Yol 1', description: 'Birinci yolun özellikleri' },
+      { name: 'Yol 1 Sonucu', description: 'Birinci yolun getireceği' },
+      { name: 'Yol 2', description: 'İkinci yolun özellikleri' },
+      { name: 'Yol 2 Sonucu', description: 'İkinci yolun getireceği' },
+      { name: 'Tavsiye', description: 'Evrensel rehberlik' }
+    ],
+    difficulty: 'Orta'
+  },
+  {
+    id: 'pros-cons',
+    name: 'Artı ve Eksiler',
+    category: 'decision',
+    cardCount: 4,
+    description: 'Bir kararın avantaj ve dezavantajları',
+    positions: [
+      { name: 'Artı Yönler', description: 'Olumlu faktörler' },
+      { name: 'Eksi Yönler', description: 'Olumsuz faktörler' },
+      { name: 'Görünmeyen Faktör', description: 'Gizli etkenler' },
+      { name: 'Nihai Tavsiye', description: 'Son öneri' }
+    ],
+    difficulty: 'Kolay'
+  },
+
+  // Zamanlama
+  {
+    id: 'weekly',
+    name: 'Haftalık',
+    category: 'timing',
+    cardCount: 7,
+    description: 'Önümüzdeki hafta için günlük rehberlik',
+    positions: [
+      { name: 'Pazartesi', description: 'Haftanın ilk günü' },
+      { name: 'Salı', description: 'İkinci gün enerjisi' },
+      { name: 'Çarşamba', description: 'Haftanın ortası' },
+      { name: 'Perşembe', description: 'Dördüncü gün' },
+      { name: 'Cuma', description: 'İş haftasının sonu' },
+      { name: 'Cumartesi', description: 'Hafta sonu başlangıcı' },
+      { name: 'Pazar', description: 'Dinlenme günü' }
+    ],
+    difficulty: 'Orta'
+  },
+  {
+    id: 'monthly',
+    name: 'Aylık',
+    category: 'timing',
+    cardCount: 4,
+    description: 'Ay boyunca sizi bekleyenler',
+    positions: [
+      { name: '1. Hafta', description: 'Ayın başlangıcı' },
+      { name: '2. Hafta', description: 'İkinci hafta enerjisi' },
+      { name: '3. Hafta', description: 'Üçüncü hafta gelişmeleri' },
+      { name: '4. Hafta', description: 'Ay sonu' }
+    ],
+    difficulty: 'Kolay'
+  },
+  {
+    id: 'yearly',
+    name: 'Yıllık',
+    category: 'timing',
+    cardCount: 12,
+    description: 'Tüm yıl için aylık rehberlik',
+    positions: [
+      { name: 'Ocak', description: 'Yılın başlangıcı' },
+      { name: 'Şubat', description: 'Kış ortası' },
+      { name: 'Mart', description: 'Bahar başlangıcı' },
+      { name: 'Nisan', description: 'Yenilenme zamanı' },
+      { name: 'Mayıs', description: 'Büyüme dönemi' },
+      { name: 'Haziran', description: 'Yılın ortası' },
+      { name: 'Temmuz', description: 'Yaz enerjisi' },
+      { name: 'Ağustos', description: 'Hasat zamanı' },
+      { name: 'Eylül', description: 'Sonbahar başlangıcı' },
+      { name: 'Ekim', description: 'Dönüşüm ayı' },
+      { name: 'Kasım', description: 'Derinleşme' },
+      { name: 'Aralık', description: 'Yıl sonu kapanışı' }
+    ],
+    difficulty: 'Zor'
+  }
+];

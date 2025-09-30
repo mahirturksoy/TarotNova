@@ -1,162 +1,127 @@
+// app/context/ReadingContext.tsx
+
 import React, { createContext, useContext, useState, ReactNode } from 'react';
-import { getAIPoweredReading, TarotReading } from '../services/tarotAPIService';
+import { getAIPoweredReading } from '../services/tarotAPIService';
 import { SpreadType } from '../constants/spreadTypes';
-import { saveReadingToHistory } from '../services/readingHistoryService';
 
-// Context için state türleri tanımı
-interface ReadingContextState {
+export interface CardDetail {
+  cardName: string;
+  position: string;
+  meaning: string;
+  advice: string;
+}
+
+export interface LifeAspects {
+  love: string;
+  career: string;
+  personal: string;
+}
+
+export interface CurrentReading {
+  question: string;
+  mood: string;
+  selectedCards: string[];
+  spreadType?: SpreadType;
+}
+
+export interface ReadingContextType {
+  currentReading: CurrentReading | null;
+  holisticInterpretation: string | null;
+  cardDetails: CardDetail[] | null;
+  lifeAspects: LifeAspects | null;
+  summary: string | null;
+  confidence: number | null;
   isLoading: boolean;
-  readingResult: TarotReading | null;
   error: string | null;
-  currentSpread: SpreadType | null;
-  lastQuestion: string;
-  lastMood: string;
-  lastCards: string[];
-}
-
-// Context için actions (eylemler) türleri tanımı
-interface ReadingContextActions {
-  generateReading: (question: string, mood: string, cards: string[], spreadType?: SpreadType) => Promise<void>;
+  generateReading: (
+    question: string, 
+    mood: string, 
+    selectedCards: string[],
+    spreadType?: SpreadType
+  ) => Promise<void>;
   clearReading: () => void;
-  clearError: () => void;
-  setCurrentSpread: (spread: SpreadType | null) => void;
 }
 
-// Birleşik context türü
-interface ReadingContextType extends ReadingContextState, ReadingContextActions {}
-
-// Context oluşturma (başlangıç değeri undefined)
 const ReadingContext = createContext<ReadingContextType | undefined>(undefined);
 
-// Provider bileşeni için props türü
+export const useReadingContext = () => {
+  const context = useContext(ReadingContext);
+  if (!context) {
+    throw new Error('useReadingContext must be used within a ReadingProvider');
+  }
+  return context;
+};
+
 interface ReadingProviderProps {
   children: ReactNode;
 }
 
-/**
- * ReadingProvider bileşeni - Okuma geçmişi kaydetme ile güncellenmiş versiyon
- */
 export const ReadingProvider: React.FC<ReadingProviderProps> = ({ children }) => {
-  // Ana state değişkenleri
-  const [isLoading, setIsLoading] = useState<boolean>(false);
-  const [readingResult, setReadingResult] = useState<TarotReading | null>(null);
+  const [currentReading, setCurrentReading] = useState<CurrentReading | null>(null);
+  const [holisticInterpretation, setHolisticInterpretation] = useState<string | null>(null);
+  const [cardDetails, setCardDetails] = useState<CardDetail[] | null>(null);
+  const [lifeAspects, setLifeAspects] = useState<LifeAspects | null>(null);
+  const [summary, setSummary] = useState<string | null>(null);
+  const [confidence, setConfidence] = useState<number | null>(null);
+  const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [currentSpread, setCurrentSpread] = useState<SpreadType | null>(null);
-  const [lastQuestion, setLastQuestion] = useState<string>('');
-  const [lastMood, setLastMood] = useState<string>('');
-  const [lastCards, setLastCards] = useState<string[]>([]);
 
-  /**
-   * Tarot okuması oluşturma fonksiyonu - Spread desteği ve geçmiş kayıt sistemi ile
-   */
   const generateReading = async (
     question: string, 
     mood: string, 
-    cards: string[],
+    selectedCards: string[],
     spreadType?: SpreadType
-  ): Promise<void> => {
-    try {
-      console.log('Tarot okuması başlatılıyor...', { 
-        question, 
-        mood, 
-        cards, 
-        spreadType: spreadType?.name 
-      });
-      
-      // Loading durumunu aktif et ve önceki hataları temizle
-      setIsLoading(true);
-      setError(null);
-      setReadingResult(null);
-      
-      // Son okuma bilgilerini kaydet (geçmiş sistemi için)
-      setLastQuestion(question);
-      setLastMood(mood);
-      setLastCards(cards);
-      
-      // Aktif spread'i kaydet
-      if (spreadType) {
-        setCurrentSpread(spreadType);
-      }
+  ) => {
+    setIsLoading(true);
+    setError(null);
 
-      // API servisini çağır (spread bilgisi ile)
-      const result = await getAIPoweredReading(question, mood, cards, spreadType);
+    try {
+      // Mevcut okumayı kaydet
+      setCurrentReading({
+        question,
+        mood,
+        selectedCards,
+        spreadType
+      });
+
+      // tarotAPIService'den veri al
+      const result = await getAIPoweredReading(question, mood, selectedCards, spreadType);
       
-      console.log('Tarot okuması başarıyla tamamlandı:', result.readingTitle);
-      
-      // Başarılı sonucu state'e kaydet
-      setReadingResult(result);
-      
-      // Okuma geçmişine otomatik kaydet
-      try {
-        await saveReadingToHistory(result, question, mood, cards, spreadType || null);
-        console.log('Okuma geçmişe başarıyla kaydedildi');
-      } catch (historyError) {
-        console.error('Geçmiş kaydetme hatası (ana işlemi etkilemez):', historyError);
-        // Geçmiş kaydetme hatası ana okuma işlemini durdurmaz
-      }
-      
+      // TarotReading tipinden ReadingContext'e uygun formata dönüştür
+      setHolisticInterpretation(result.holisticInterpretation);
+      setCardDetails(result.cardDetails);
+      setLifeAspects(result.lifeAspects);
+      setSummary(result.summary);
+      setConfidence(result.confidence);
     } catch (err) {
-      // Hata durumunu yakalama ve loglama
-      const errorMessage = err instanceof Error 
-        ? err.message 
-        : 'Tarot okuması sırasında bilinmeyen bir hata oluştu';
-        
-      console.error('Tarot okuması hatası:', errorMessage);
-      setError(errorMessage);
-      setReadingResult(null);
-      
+      console.error('Okuma oluşturma hatası:', err);
+      setError('Okuma oluşturulurken bir hata oluştu. Lütfen tekrar deneyin.');
     } finally {
-      // Her durumda loading durumunu sonlandır
       setIsLoading(false);
     }
   };
 
-  /**
-   * Okuma sonuçlarını ve tüm ilgili verileri temizleme fonksiyonu
-   */
-  const clearReading = (): void => {
-    setReadingResult(null);
+  const clearReading = () => {
+    setCurrentReading(null);
+    setHolisticInterpretation(null);
+    setCardDetails(null);
+    setLifeAspects(null);
+    setSummary(null);
+    setConfidence(null);
     setError(null);
-    setIsLoading(false);
-    setCurrentSpread(null);
-    setLastQuestion('');
-    setLastMood('');
-    setLastCards([]);
-    console.log('Tarot okuması ve tüm veriler temizlendi');
   };
 
-  /**
-   * Sadece hata durumunu temizleme fonksiyonu
-   */
-  const clearError = (): void => {
-    setError(null);
-    console.log('Hata mesajı temizlendi');
-  };
-
-  /**
-   * Aktif spread ayarlama fonksiyonu
-   */
-  const handleSetCurrentSpread = (spread: SpreadType | null): void => {
-    setCurrentSpread(spread);
-    console.log('Aktif spread ayarlandı:', spread?.name || 'temizlendi');
-  };
-
-  // Context value objesi - tüm state ve actions'ları içerir
   const contextValue: ReadingContextType = {
-    // State değerleri
+    currentReading,
+    holisticInterpretation,
+    cardDetails,
+    lifeAspects,
+    summary,
+    confidence,
     isLoading,
-    readingResult,
     error,
-    currentSpread,
-    lastQuestion,
-    lastMood,
-    lastCards,
-    
-    // Action fonksiyonları
     generateReading,
-    clearReading,
-    clearError,
-    setCurrentSpread: handleSetCurrentSpread,
+    clearReading
   };
 
   return (
@@ -165,26 +130,3 @@ export const ReadingProvider: React.FC<ReadingProviderProps> = ({ children }) =>
     </ReadingContext.Provider>
   );
 };
-
-/**
- * Custom hook - ReadingContext'i kullanmak için
- * Otomatik hata kontrolü ile birlikte gelir
- */
-export const useReadingContext = (): ReadingContextType => {
-  const context = useContext(ReadingContext);
-  
-  // Context provider dışında kullanılırsa hata fırlat
-  if (context === undefined) {
-    throw new Error(
-      'useReadingContext hook\'u ReadingProvider içinde kullanılmalıdır. ' +
-      'Bileşeninizin ReadingProvider ile sarıldığından emin olun.'
-    );
-  }
-  
-  return context;
-};
-
-/**
- * Context'in varsayılan export'u
- */
-export default ReadingContext;
