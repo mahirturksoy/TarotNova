@@ -13,6 +13,9 @@ import {
   UIManager
 } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
+// DEĞİŞİKLİK: Markdown kütüphanesi import edildi
+import Markdown from 'react-native-markdown-display';
+
 import { CardDetail } from '../context/ReadingContext';
 import { MAJOR_ARCANA, getCardImage } from '../constants/tarotDeck';
 
@@ -50,6 +53,26 @@ const ReadingDisplay: React.FC<ReadingDisplayProps> = ({ readingData }) => {
     setExpandedCardIndex(expandedCardIndex === index ? null : index);
   };
 
+  // DEĞİŞİKLİK: Markdown stilleri, uygulamanın genel temasına uygun olarak tanımlandı.
+  const markdownStyles = {
+    body: {
+      fontSize: 15,
+      color: 'rgba(243, 232, 255, 0.9)',
+      lineHeight: 24,
+      fontFamily: Platform.select({ios: 'Georgia', android: 'serif', default: 'serif'}),
+    },
+    heading3: {
+      color: '#d4af37',
+      fontFamily: Platform.select({ios: 'Georgia-Bold', android: 'serif', default: 'serif'}),
+      fontSize: 16,
+      marginTop: 10,
+      marginBottom: 5,
+    },
+    strong: {
+      fontFamily: Platform.select({ios: 'Georgia-Bold', android: 'serif', default: 'serif'}),
+    },
+  };
+  
   return (
     <>
       <LinearGradient
@@ -97,12 +120,10 @@ const ReadingDisplay: React.FC<ReadingDisplayProps> = ({ readingData }) => {
               colors={['rgba(74, 4, 78, 0.2)', 'rgba(74, 4, 78, 0.3)']}
               style={styles.contentCard}
             >
-              <Text
-                style={styles.contentText}
-                numberOfLines={showFullInterpretation ? undefined : 6}
-              >
-                {holisticInterpretation}
-              </Text>
+              {/* DEĞİŞİKLİK: Text yerine Markdown bileşeni kullanıldı */}
+              <Markdown style={markdownStyles}>
+                {showFullInterpretation ? holisticInterpretation : `${holisticInterpretation.substring(0, 300)}...`}
+              </Markdown>
               {!showFullInterpretation && holisticInterpretation.length > 300 && (
                 <View style={styles.readMoreContainer}>
                   <Text style={styles.readMoreText}>Devamını Oku ⌄</Text>
@@ -138,14 +159,12 @@ const ReadingDisplay: React.FC<ReadingDisplayProps> = ({ readingData }) => {
                 </View>
                 {isExpanded && (
                   <View style={styles.accordionContent}>
-                    <Text style={styles.accordionContentText}>
-                      <Text style={styles.accordionLabel}>Anlam: </Text>
-                      {detail.meaning}
-                    </Text>
-                    <Text style={styles.accordionContentText}>
-                      <Text style={styles.accordionLabel}>Tavsiye: </Text>
-                      {detail.advice}
-                    </Text>
+                    {/* DEĞİŞİKLİK: Text yerine Markdown bileşeni kullanıldı */}
+                    <Text style={styles.accordionLabel}>Anlam:</Text>
+                    <Markdown style={markdownStyles}>{detail.meaning}</Markdown>
+                    <View style={{height: 10}}/>
+                    <Text style={styles.accordionLabel}>Tavsiye:</Text>
+                    <Markdown style={markdownStyles}>{detail.advice}</Markdown>
                   </View>
                 )}
               </TouchableOpacity>
@@ -165,7 +184,8 @@ const ReadingDisplay: React.FC<ReadingDisplayProps> = ({ readingData }) => {
             colors={['rgba(74, 4, 78, 0.2)', 'rgba(74, 4, 78, 0.3)']}
             style={styles.contentCard}
           >
-            <Text style={styles.contentText}>{summary}</Text>
+            {/* DEĞİŞİKLİK: Text yerine Markdown bileşeni kullanıldı */}
+            <Markdown style={markdownStyles}>{summary}</Markdown>
           </LinearGradient>
         </View>
       )}
@@ -173,7 +193,9 @@ const ReadingDisplay: React.FC<ReadingDisplayProps> = ({ readingData }) => {
   );
 };
 
+
 const styles = StyleSheet.create({
+    // ... (diğer stilleriniz aynı kalıyor)
     headerSection: {
         marginHorizontal: 12,
         borderRadius: 16,
@@ -258,12 +280,6 @@ const styles = StyleSheet.create({
         borderWidth: 1,
         borderColor: '#701a75',
       },
-      contentText: {
-        fontSize: 15,
-        color: 'rgba(243, 232, 255, 0.9)',
-        lineHeight: 24,
-        fontFamily: Platform.select({ios: 'Georgia', android: 'serif', default: 'serif'}),
-      },
       readMoreContainer: {
         alignSelf: 'flex-start',
         marginTop: 10,
@@ -321,17 +337,12 @@ const styles = StyleSheet.create({
         marginHorizontal: 16,
         paddingTop: 16,
       },
-      accordionContentText: {
-        fontSize: 14,
-        color: 'rgba(243, 232, 255, 0.9)',
-        lineHeight: 22,
-        marginBottom: 10,
-        fontFamily: Platform.select({ios: 'Georgia', android: 'serif', default: 'serif'}),
-      },
       accordionLabel: {
         fontWeight: 'bold',
+        fontSize: 14,
         color: '#d4af37',
         fontFamily: Platform.select({ios: 'Georgia-Bold', android: 'serif', default: 'serif'}),
+        marginBottom: 4,
       },
 });
     

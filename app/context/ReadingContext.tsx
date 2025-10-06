@@ -1,20 +1,15 @@
 // app/context/ReadingContext.tsx
 
 import React, { createContext, useContext, useState, ReactNode } from 'react';
-import { getAIPoweredReading } from '../services/tarotAPIService';
-import { SpreadType } from '../constants/spreadTypes';
+// DEĞİŞİKLİK: Yeni API servisimizden hem fonksiyonu hem de yeni tip tanımını alıyoruz
+import { generateTarotInterpretation, TarotAIResponse } from '../services/novaApiService'; 
+import { SpreadType, SpreadPosition } from '../constants/spreadTypes';
 
 export interface CardDetail {
   cardName: string;
   position: string;
   meaning: string;
   advice: string;
-}
-
-export interface LifeAspects {
-  love: string;
-  career: string;
-  personal: string;
 }
 
 export interface CurrentReading {
@@ -28,9 +23,7 @@ export interface ReadingContextType {
   currentReading: CurrentReading | null;
   holisticInterpretation: string | null;
   cardDetails: CardDetail[] | null;
-  lifeAspects: LifeAspects | null;
   summary: string | null;
-  confidence: number | null;
   isLoading: boolean;
   error: string | null;
   generateReading: (
@@ -60,9 +53,7 @@ export const ReadingProvider: React.FC<ReadingProviderProps> = ({ children }) =>
   const [currentReading, setCurrentReading] = useState<CurrentReading | null>(null);
   const [holisticInterpretation, setHolisticInterpretation] = useState<string | null>(null);
   const [cardDetails, setCardDetails] = useState<CardDetail[] | null>(null);
-  const [lifeAspects, setLifeAspects] = useState<LifeAspects | null>(null);
   const [summary, setSummary] = useState<string | null>(null);
-  const [confidence, setConfidence] = useState<number | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -74,9 +65,11 @@ export const ReadingProvider: React.FC<ReadingProviderProps> = ({ children }) =>
   ) => {
     setIsLoading(true);
     setError(null);
+    setHolisticInterpretation(null);
+    setCardDetails(null);
+    setSummary(null);
 
     try {
-      // Mevcut okumayı kaydet
       setCurrentReading({
         question,
         mood,
@@ -84,18 +77,28 @@ export const ReadingProvider: React.FC<ReadingProviderProps> = ({ children }) =>
         spreadType
       });
 
-      // tarotAPIService'den veri al
-      const result = await getAIPoweredReading(question, mood, selectedCards, spreadType);
+      const payload = {
+        question: question,
+        mood: mood,
+        spreadType: spreadType?.name || "Genel Açılım",
+        cards: selectedCards.map((cardName, index) => ({
+          cardName: cardName,
+          position: spreadType?.positions[index]?.name || `Kart ${index + 1}`
+        }))
+      };
+
+      // DEĞİŞİKLİK: Yeni servisimiz artık bize tüm yorumu içeren bir nesne veriyor.
+      const aiResponse: TarotAIResponse = await generateTarotInterpretation(payload);
       
-      // TarotReading tipinden ReadingContext'e uygun formata dönüştür
-      setHolisticInterpretation(result.holisticInterpretation);
-      setCardDetails(result.cardDetails);
-      setLifeAspects(result.lifeAspects);
-      setSummary(result.summary);
-      setConfidence(result.confidence);
+      // DEĞİŞİKLİK: Gelen yapılandırılmış veriyi state'lere kaydediyoruz.
+      setHolisticInterpretation(aiResponse.holisticInterpretation);
+      setCardDetails(aiResponse.cardDetails);
+      setSummary(aiResponse.summary);
+      
     } catch (err) {
       console.error('Okuma oluşturma hatası:', err);
-      setError('Okuma oluşturulurken bir hata oluştu. Lütfen tekrar deneyin.');
+      const errorMessage = err instanceof Error ? err.message : 'Okuma oluşturulurken bir hata oluştu.';
+      setError(errorMessage);
     } finally {
       setIsLoading(false);
     }
@@ -105,9 +108,7 @@ export const ReadingProvider: React.FC<ReadingProviderProps> = ({ children }) =>
     setCurrentReading(null);
     setHolisticInterpretation(null);
     setCardDetails(null);
-    setLifeAspects(null);
     setSummary(null);
-    setConfidence(null);
     setError(null);
   };
 
@@ -115,13 +116,11 @@ export const ReadingProvider: React.FC<ReadingProviderProps> = ({ children }) =>
     currentReading,
     holisticInterpretation,
     cardDetails,
-    lifeAspects,
     summary,
-    confidence,
     isLoading,
     error,
     generateReading,
-    clearReading
+    clearReading,
   };
 
   return (
