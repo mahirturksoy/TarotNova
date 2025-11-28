@@ -1,31 +1,26 @@
 // app/types/navigation.ts
 
-import type { NavigatorScreenParams } from '@react-navigation/native';
 import { SpreadType } from '../constants/spreadTypes';
 import { ReadingHistoryItem } from '../services/readingHistoryService';
 
-// Stack Navigator içindeki ekranlar ve parametreleri
+// Ana Stack Navigator'ımızın doğrudan yönettiği ekranlar.
 export type RootStackParamList = {
-  Home: undefined;
+  Main: { screen?: keyof TabParamList }; // Tab'lar arası geçişi kolaylaştırmak için opsiyonel parametre
   SpreadSelection: { question: string; mood: string };
-  CardSelection: {
-    question: string;
-    mood: string;
-    spreadType?: SpreadType;
+  CardSelection: { 
+    question: string; 
+    mood: string; 
+    spreadType: SpreadType; 
   };
   Reading: undefined;
-  ReadingHistory: undefined;
   ReadingDetail: { reading: ReadingHistoryItem };
-  Favorites: undefined; // <-- 1. EKLENEN SATIR
+  Auth: undefined;
 };
 
-// Tab Navigator içindeki ekranlar ve parametreleri
+// Alt Tab Navigator'ımızın yönettiği ekranlar.
 export type TabParamList = {
-  'Ana Sayfa': NavigatorScreenParams<RootStackParamList>;
-  'Geçmiş': NavigatorScreenParams<RootStackParamList>;
-  'Favoriler': NavigatorScreenParams<RootStackParamList>; // <-- 2. DEĞİŞEN SATIR
-  'Profil': undefined;
+  "Ana Sayfa": undefined;
+  "Geçmiş": undefined;
+  "Favoriler": undefined;
+  "Profil": undefined;
 };
-
-// Tüm navigasyon hedeflerini birleştiren genel tip
-export type AppParamList = RootStackParamList & TabParamList;

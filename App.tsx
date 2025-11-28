@@ -1,15 +1,19 @@
 // App.tsx
 
-import React from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { NavigationContainer, DarkTheme } from '@react-navigation/native';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import { StatusBar } from 'expo-status-bar';
 import { View, Text, StyleSheet, Platform } from 'react-native';
 import Toast from 'react-native-toast-message';
+import * as SplashScreen from 'expo-splash-screen'; // EKLENDİ
 
 // Context Provider
 import { ReadingProvider } from './app/context/ReadingContext';
+
+// Bileşenler
+import AnimatedSplashScreen from './app/components/AnimatedSplashScreen'; // EKLENDİ
 
 // Ekranlar ve Tipler
 import HomeScreen from './app/screens/HomeScreen';
@@ -20,9 +24,13 @@ import ReadingHistoryScreen from './app/screens/ReadingHistoryScreen';
 import ReadingDetailScreen from './app/screens/ReadingDetailScreen';
 import FavoritesScreen from './app/screens/FavoritesScreen';
 import ProfileScreen from './app/screens/ProfileScreen';
+import AuthScreen from './app/screens/AuthScreen';
 import { RootStackParamList, TabParamList } from './app/types/navigation';
 
-const Stack = createNativeStackNavigator<RootStackParamList>();
+// Native splash ekranının otomatik kapanmasını engelliyoruz
+SplashScreen.preventAutoHideAsync();
+
+const RootStack = createNativeStackNavigator<RootStackParamList>();
 const Tab = createBottomTabNavigator<TabParamList>();
 
 const MyTheme = {
@@ -30,7 +38,7 @@ const MyTheme = {
   colors: { ...DarkTheme.colors, background: '#1d112b', card: '#1d112b', text: '#f3e8ff', border: '#4a044e', primary: '#d4af37' },
 };
 
-// --- YENİ EKLENEN KISIM: MİSTİK TOAST TASARIMI ---
+// MİSTİK TOAST TASARIMI
 const toastConfig = {
   mysticSuccess: ({ text1, text2 }: { text1?: string; text2?: string }) => (
     <View style={styles.mysticToastContainer}>
@@ -42,7 +50,6 @@ const toastConfig = {
     </View>
   ),
 };
-// --- YENİ EKLENEN KISIM SONU ---
 
 const stackScreenOptions = {
   headerTintColor: '#d4af37',
@@ -52,18 +59,16 @@ const stackScreenOptions = {
     fontFamily: Platform.select({ ios: 'Georgia', android: 'serif' }),
   },
   headerTitleAlign: 'center' as 'center',
+  headerBackTitle: 'Geri',
 };
-
-const HomeStack = () => ( <Stack.Navigator screenOptions={stackScreenOptions}><Stack.Screen name="Home" component={HomeScreen} options={{ headerShown: false }} /><Stack.Screen name="SpreadSelection" component={SpreadSelectionScreen} options={{ title: 'Açılım Seçimi', headerBackTitle: 'Geri' }} /><Stack.Screen name="CardSelection" component={CardSelectionScreen} options={{ title: 'Kart Seçimi', headerBackTitle: 'Geri' }} /><Stack.Screen name="Reading" component={ReadingScreen} options={{ title: 'Nova Yorumu', headerBackTitle: 'Geri' }} /></Stack.Navigator> );
-const HistoryStack = () => ( <Stack.Navigator screenOptions={stackScreenOptions}><Stack.Screen name="ReadingHistory" component={ReadingHistoryScreen} options={{ title: 'Okuma Geçmişi' }} /><Stack.Screen name="ReadingDetail" component={ReadingDetailScreen} options={{ title: 'Nova Yorumu', headerBackTitle: 'Geri' }} /></Stack.Navigator> );
-const FavoritesStack = () => ( <Stack.Navigator screenOptions={stackScreenOptions}><Stack.Screen name="Favorites" component={FavoritesScreen} options={{ title: 'Favori Okumalar' }} /><Stack.Screen name="ReadingDetail" component={ReadingDetailScreen} options={{ title: 'Nova Yorumu', headerBackTitle: 'Geri' }} /></Stack.Navigator> );
 
 const TabIcon = ({ name, focused }: { name: string; focused: boolean }) => {
   const icons: Record<string, string> = { 'Ana Sayfa': '✧', 'Geçmiş': '❋', 'Favoriler': '✦', 'Profil': '☾' };
   return ( <View style={styles.tabIconContainer}><Text style={[styles.tabIcon, focused && styles.tabIconFocused]}>{icons[name]}</Text></View> );
 };
 
-const TabNavigator = () => {
+// Ana Tab Navigator
+const MainTabNavigator = () => {
   return (
     <Tab.Navigator screenOptions={({ route }) => ({
         tabBarIcon: ({ focused }) => <TabIcon name={route.name} focused={focused} />,
@@ -74,20 +79,67 @@ const TabNavigator = () => {
         headerShown: false,
       })}
     >
-      <Tab.Screen name="Ana Sayfa" component={HomeStack} />
-      <Tab.Screen name="Geçmiş" component={HistoryStack} />
-      <Tab.Screen name="Favoriler" component={FavoritesStack} />
+      <Tab.Screen name="Ana Sayfa" component={HomeScreen} />
+      <Tab.Screen name="Geçmiş" component={ReadingHistoryScreen} />
+      <Tab.Screen name="Favoriler" component={FavoritesScreen} />
       <Tab.Screen name="Profil" component={ProfileScreen} />
     </Tab.Navigator>
   );
 };
 
 const App: React.FC = () => {
+  const [appIsReady, setAppIsReady] = useState(false);
+  const [showCustomSplash, setShowCustomSplash] = useState(true);
+
+  useEffect(() => {
+    async function prepare() {
+      try {
+        // Burada fontları yükleme, API hazırlığı vb. yapabilirsin.
+        // Simülasyon için 1 saniyelik bekleme koyuyoruz.
+        await new Promise(resolve => setTimeout(resolve, 1000));
+      } catch (e) {
+        console.warn(e);
+      } finally {
+        setAppIsReady(true);
+      }
+    }
+
+    prepare();
+  }, []);
+
+  const onLayoutRootView = useCallback(async () => {
+    if (appIsReady) {
+      // Uygulama hazır olduğunda native beyaz ekranı gizle
+      // Artık arkada bizim AnimatedSplashScreen görünecek
+      await SplashScreen.hideAsync();
+    }
+  }, [appIsReady]);
+
+  if (!appIsReady) {
+    return null;
+  }
+
+  // Eğer animasyon henüz bitmediyse, Özel Splash Ekranını göster
+  if (showCustomSplash) {
+    return (
+      <View style={{ flex: 1 }} onLayout={onLayoutRootView}>
+        <AnimatedSplashScreen onAnimationFinish={() => setShowCustomSplash(false)} />
+      </View>
+    );
+  }
+
   return (
     <ReadingProvider>
       <NavigationContainer theme={MyTheme}>
         <StatusBar style="light" />
-        <TabNavigator />
+        <RootStack.Navigator screenOptions={stackScreenOptions}>
+          <RootStack.Screen name="Main" component={MainTabNavigator} options={{ headerShown: false }} />
+          <RootStack.Screen name="SpreadSelection" component={SpreadSelectionScreen} options={{ title: 'Açılım Seçimi' }} />
+          <RootStack.Screen name="CardSelection" component={CardSelectionScreen} options={{ title: 'Kart Seçimi' }} />
+          <RootStack.Screen name="Reading" component={ReadingScreen} options={{ title: 'Nova Yorumu' }} />
+          <RootStack.Screen name="ReadingDetail" component={ReadingDetailScreen} options={{ title: 'Nova Yorumu' }} />
+          <RootStack.Screen name="Auth" component={AuthScreen} options={{ presentation: 'modal', headerShown: false }} />
+        </RootStack.Navigator>
         <Toast config={toastConfig} />
       </NavigationContainer>
     </ReadingProvider>
@@ -99,7 +151,7 @@ const styles = StyleSheet.create({
   tabIcon: { fontSize: 28, color: '#a8a29e' },
   tabIconFocused: { color: '#d4af37', fontSize: 30 },
   
-  // --- YENİ EKLENEN KISIM: MİSTİK TOAST STİLLERİ ---
+  // MİSTİK TOAST STİLLERİ
   mysticToastContainer: {
     width: '90%',
     backgroundColor: '#2b173f',
@@ -124,9 +176,7 @@ const styles = StyleSheet.create({
     textShadowOffset: { width: 0, height: 0 },
     textShadowRadius: 8,
   },
-  mysticToastTextContainer: {
-    flex: 1,
-  },
+  mysticToastTextContainer: { flex: 1 },
   mysticToastTitle: {
     fontSize: 16,
     fontWeight: 'bold',

@@ -15,6 +15,7 @@ export interface SpreadType {
   description: string;
   positions: SpreadPosition[];
   difficulty: 'Kolay' | 'Orta' | 'Zor';
+  isPremium: boolean; // <-- YENİ EKLENDİ
 }
 
 export interface CategoryInfo {
@@ -24,82 +25,36 @@ export interface CategoryInfo {
 }
 
 export const SPREAD_CATEGORIES: CategoryInfo[] = [
-  {
-    id: 'general',
-    name: 'Genel',
-    description: 'Hayatın genel akışı ve günlük sorular için ideal açılımlar'
-  },
-  {
-    id: 'love',
-    name: 'Aşk',
-    description: 'İlişkiler, duygusal bağlar ve romantik sorular için'
-  },
-  {
-    id: 'career',
-    name: 'Kariyer',
-    description: 'İş hayatı, kariyer gelişimi ve maddi konular için'
-  },
-  {
-    id: 'spiritual',
-    name: 'Ruhsal',
-    description: 'Manevi gelişim, içsel yolculuk ve ruhsal sorular için'
-  },
-  {
-    id: 'decision',
-    name: 'Karar',
-    description: 'Önemli kararlar ve seçimler için yol gösterici açılımlar'
-  },
-  {
-    id: 'timing',
-    name: 'Zamanlama',
-    description: 'Belirli zaman dilimleri için öngörü ve planlama'
-  }
+  { id: 'general', name: 'Genel', description: 'Hayatın genel akışı ve günlük sorular için ideal açılımlar' },
+  { id: 'love', name: 'Aşk', description: 'İlişkiler, duygusal bağlar ve romantik sorular için' },
+  { id: 'career', name: 'Kariyer', description: 'İş hayatı, kariyer gelişimi ve maddi konular için' },
+  { id: 'spiritual', name: 'Ruhsal', description: 'Manevi gelişim, içsel yolculuk ve ruhsal sorular için' },
+  { id: 'decision', name: 'Karar', description: 'Önemli kararlar ve seçimler için yol gösterici açılımlar' },
+  { id: 'timing', name: 'Zamanlama', description: 'Belirli zaman dilimleri için öngörü ve planlama' }
 ];
 
-export const CATEGORY_COLORS: Record<SpreadCategory | 'default', {
-  primary: string;
-  light: string;
-  background: string;
-}> = {
-  general: {
-    primary: '#8B5CF6',
-    light: '#A78BFA',
-    background: 'rgba(139, 92, 246, 0.1)'
-  },
-  love: {
-    primary: '#EC4899',
-    light: '#F472B6',
-    background: 'rgba(236, 72, 153, 0.1)'
-  },
-  career: {
-    primary: '#10B981',
-    light: '#34D399',
-    background: 'rgba(16, 185, 129, 0.1)'
-  },
-  spiritual: {
-    primary: '#F59E0B',
-    light: '#FBBF24',
-    background: 'rgba(245, 158, 11, 0.1)'
-  },
-  decision: {
-    primary: '#6366F1',
-    light: '#818CF8',
-    background: 'rgba(99, 102, 241, 0.1)'
-  },
-  timing: {
-    primary: '#14B8A6',
-    light: '#2DD4BF',
-    background: 'rgba(20, 184, 166, 0.1)'
-  },
-  default: {
-    primary: '#8B5CF6',
-    light: '#A78BFA',
-    background: 'rgba(139, 92, 246, 0.1)'
-  }
+export const CATEGORY_COLORS: Record<SpreadCategory | 'default', { primary: string; light: string; background: string; }> = {
+  general: { primary: '#8B5CF6', light: '#A78BFA', background: 'rgba(139, 92, 246, 0.1)' },
+  love: { primary: '#EC4899', light: '#F472B6', background: 'rgba(236, 72, 153, 0.1)' },
+  career: { primary: '#10B981', light: '#34D399', background: 'rgba(16, 185, 129, 0.1)' },
+  spiritual: { primary: '#F59E0B', light: '#FBBF24', background: 'rgba(245, 158, 11, 0.1)' },
+  decision: { primary: '#6366F1', light: '#818CF8', background: 'rgba(99, 102, 241, 0.1)' },
+  timing: { primary: '#14B8A6', light: '#2DD4BF', background: 'rgba(20, 184, 166, 0.1)' },
+  default: { primary: '#8B5CF6', light: '#A78BFA', background: 'rgba(139, 92, 246, 0.1)' }
 };
 
 export const SPREAD_TYPES: SpreadType[] = [
-  // Genel
+  // --- GENEL KATEGORİSİ ---
+  {
+    id: 'single-card',
+    name: 'Tek Kart',
+    category: 'general',
+    cardCount: 1,
+    description: 'Günlük rehberlik veya hızlı cevap için',
+    positions: [{ name: 'Mesaj', description: 'Günün mesajı' }],
+    difficulty: 'Kolay',
+    isPremium: false // ÜCRETSİZ
+  },
   {
     id: 'past-present-future',
     name: 'Geçmiş - Şimdi - Gelecek',
@@ -111,18 +66,22 @@ export const SPREAD_TYPES: SpreadType[] = [
       { name: 'Şimdi', description: 'Mevcut durumunuz' },
       { name: 'Gelecek', description: 'Muhtemel sonuç' }
     ],
-    difficulty: 'Kolay'
+    difficulty: 'Kolay',
+    isPremium: false // ÜCRETSİZ
   },
   {
-    id: 'single-card',
-    name: 'Tek Kart',
+    id: 'yes-no',
+    name: 'Evet/Hayır',
     category: 'general',
-    cardCount: 1,
-    description: 'Günlük rehberlik veya hızlı cevap için',
+    cardCount: 3,
+    description: 'Net evet veya hayır cevabı için',
     positions: [
-      { name: 'Mesaj', description: 'Günün mesajı' }
+      { name: 'Evet Faktörleri', description: 'Olumlu yönler' },
+      { name: 'Hayır Faktörleri', description: 'Olumsuz yönler' },
+      { name: 'Sonuç', description: 'Nihai cevap' }
     ],
-    difficulty: 'Kolay'
+    difficulty: 'Kolay',
+    isPremium: false // ÜCRETSİZ
   },
   {
     id: 'celtic-cross',
@@ -142,23 +101,27 @@ export const SPREAD_TYPES: SpreadType[] = [
       { name: 'Umutlar ve Korkular', description: 'İç dünyanız' },
       { name: 'Final Sonucu', description: 'Nihai sonuç' }
     ],
-    difficulty: 'Zor'
-  },
-  {
-    id: 'yes-no',
-    name: 'Evet/Hayır',
-    category: 'general',
-    cardCount: 3,
-    description: 'Net evet veya hayır cevabı için',
-    positions: [
-      { name: 'Evet Faktörleri', description: 'Olumlu yönler' },
-      { name: 'Hayır Faktörleri', description: 'Olumsuz yönler' },
-      { name: 'Sonuç', description: 'Nihai cevap' }
-    ],
-    difficulty: 'Kolay'
+    difficulty: 'Zor',
+    isPremium: true // PREMIUM 🔒
   },
 
-  // Aşk
+  // --- AŞK KATEGORİSİ ---
+  {
+    id: 'relationship-check',
+    name: 'İlişki Kontrolü',
+    category: 'love',
+    cardCount: 5,
+    description: 'Mevcut ilişkinizin sağlık durumu',
+    positions: [
+      { name: 'Sizin Duygularınız', description: 'Kalbinizdekiler' },
+      { name: 'Partner Duyguları', description: 'Partnerinizin hissettikleri' },
+      { name: 'Bağlantı', description: 'Aranızdaki bağ' },
+      { name: 'Engeller', description: 'Aşılması gereken sorunlar' },
+      { name: 'Tavsiye', description: 'İlişki için öneriler' }
+    ],
+    difficulty: 'Orta',
+    isPremium: true // PREMIUM 🔒
+  },
   {
     id: 'love-cross',
     name: 'Aşk Haçı',
@@ -173,22 +136,8 @@ export const SPREAD_TYPES: SpreadType[] = [
       { name: 'Güçlü Yönler', description: 'İlişkinizin güçlü yanları' },
       { name: 'Potansiyel', description: 'İlişkinin geleceği' }
     ],
-    difficulty: 'Orta'
-  },
-  {
-    id: 'relationship-check',
-    name: 'İlişki Kontrolü',
-    category: 'love',
-    cardCount: 5,
-    description: 'Mevcut ilişkinizin sağlık durumu',
-    positions: [
-      { name: 'Sizin Duygularınız', description: 'Kalbinizdekiler' },
-      { name: 'Partner Duyguları', description: 'Partnerinizin hissettikleri' },
-      { name: 'Bağlantı', description: 'Aranızdaki bağ' },
-      { name: 'Engeller', description: 'Aşılması gereken sorunlar' },
-      { name: 'Tavsiye', description: 'İlişki için öneriler' }
-    ],
-    difficulty: 'Orta'
+    difficulty: 'Orta',
+    isPremium: true // PREMIUM 🔒
   },
   {
     id: 'soulmate',
@@ -205,10 +154,26 @@ export const SPREAD_TYPES: SpreadType[] = [
       { name: 'İlişkinin doğası', description: 'Bağınızın karakteri' },
       { name: 'Zaman', description: 'Zamanlama ipuçları' }
     ],
-    difficulty: 'Orta'
+    difficulty: 'Orta',
+    isPremium: true // PREMIUM 🔒
   },
 
-  // Kariyer
+  // --- KARİYER KATEGORİSİ ---
+  {
+    id: 'work-situation',
+    name: 'İş Durumu',
+    category: 'career',
+    cardCount: 4,
+    description: 'Mevcut iş durumunuzun analizi',
+    positions: [
+      { name: 'Şu Anki Durum', description: 'İş yerindeki konumunuz' },
+      { name: 'Zorluklar', description: 'Karşılaştığınız problemler' },
+      { name: 'Destekler', description: 'Size yardımcı olan faktörler' },
+      { name: 'Sonuç', description: 'Muhtemel gelişme' }
+    ],
+    difficulty: 'Kolay',
+    isPremium: true // PREMIUM 🔒
+  },
   {
     id: 'career-path',
     name: 'Kariyer Yolu',
@@ -222,21 +187,8 @@ export const SPREAD_TYPES: SpreadType[] = [
       { name: 'Fırsatlar', description: 'Yaklaşan olanaklar' },
       { name: 'Sonraki Adım', description: 'Atmanız gereken adım' }
     ],
-    difficulty: 'Orta'
-  },
-  {
-    id: 'work-situation',
-    name: 'İş Durumu',
-    category: 'career',
-    cardCount: 4,
-    description: 'Mevcut iş durumunuzun analizi',
-    positions: [
-      { name: 'Şu Anki Durum', description: 'İş yerindeki konumunuz' },
-      { name: 'Zorluklar', description: 'Karşılaştığınız problemler' },
-      { name: 'Destekler', description: 'Size yardımcı olan faktörler' },
-      { name: 'Sonuç', description: 'Muhtemel gelişme' }
-    ],
-    difficulty: 'Kolay'
+    difficulty: 'Orta',
+    isPremium: true // PREMIUM 🔒
   },
   {
     id: 'financial',
@@ -251,10 +203,11 @@ export const SPREAD_TYPES: SpreadType[] = [
       { name: 'Fırsatlar', description: 'Finansal olanaklar' },
       { name: 'Finansal Tavsiye', description: 'Para yönetimi önerileri' }
     ],
-    difficulty: 'Orta'
+    difficulty: 'Orta',
+    isPremium: true // PREMIUM 🔒
   },
 
-  // Ruhsal
+  // --- RUHSAL KATEGORİSİ ---
   {
     id: 'spiritual-growth',
     name: 'Ruhsal Gelişim',
@@ -267,7 +220,8 @@ export const SPREAD_TYPES: SpreadType[] = [
       { name: 'Ruhsal Rehber Mesajı', description: 'Yüksek benliğinizden mesaj' },
       { name: 'Sonraki Seviye', description: 'Ulaşacağınız bilinç hali' }
     ],
-    difficulty: 'Orta'
+    difficulty: 'Orta',
+    isPremium: true // PREMIUM 🔒
   },
   {
     id: 'chakra',
@@ -284,7 +238,8 @@ export const SPREAD_TYPES: SpreadType[] = [
       { name: 'Üçüncü Göz', description: 'Sezgi ve vizyon' },
       { name: 'Taç Çakra', description: 'Manevi bağlantı' }
     ],
-    difficulty: 'Zor'
+    difficulty: 'Zor',
+    isPremium: true // PREMIUM 🔒
   },
   {
     id: 'moon-phases',
@@ -298,10 +253,26 @@ export const SPREAD_TYPES: SpreadType[] = [
       { name: 'Dolunay - Bereket', description: 'Hasat ve tamamlanma' },
       { name: 'Son Dördün - Bırakma', description: 'Arınma ve temizlenme' }
     ],
-    difficulty: 'Orta'
+    difficulty: 'Orta',
+    isPremium: true // PREMIUM 🔒
   },
 
-  // Karar
+  // --- KARAR KATEGORİSİ ---
+  {
+    id: 'pros-cons',
+    name: 'Artı ve Eksiler',
+    category: 'decision',
+    cardCount: 4,
+    description: 'Bir kararın avantaj ve dezavantajları',
+    positions: [
+      { name: 'Artı Yönler', description: 'Olumlu faktörler' },
+      { name: 'Eksi Yönler', description: 'Olumsuz faktörler' },
+      { name: 'Görünmeyen Faktör', description: 'Gizli etkenler' },
+      { name: 'Nihai Tavsiye', description: 'Son öneri' }
+    ],
+    difficulty: 'Kolay',
+    isPremium: true // PREMIUM 🔒
+  },
   {
     id: 'decision-making',
     name: 'Karar Verme',
@@ -315,7 +286,8 @@ export const SPREAD_TYPES: SpreadType[] = [
       { name: 'Seçenek 2', description: 'İkinci seçeneğin enerjisi' },
       { name: 'Seçenek 2 Sonucu', description: 'İkinci seçeneğin sonuçları' }
     ],
-    difficulty: 'Orta'
+    difficulty: 'Orta',
+    isPremium: true // PREMIUM 🔒
   },
   {
     id: 'two-paths',
@@ -331,24 +303,11 @@ export const SPREAD_TYPES: SpreadType[] = [
       { name: 'Yol 2 Sonucu', description: 'İkinci yolun getireceği' },
       { name: 'Tavsiye', description: 'Evrensel rehberlik' }
     ],
-    difficulty: 'Orta'
-  },
-  {
-    id: 'pros-cons',
-    name: 'Artı ve Eksiler',
-    category: 'decision',
-    cardCount: 4,
-    description: 'Bir kararın avantaj ve dezavantajları',
-    positions: [
-      { name: 'Artı Yönler', description: 'Olumlu faktörler' },
-      { name: 'Eksi Yönler', description: 'Olumsuz faktörler' },
-      { name: 'Görünmeyen Faktör', description: 'Gizli etkenler' },
-      { name: 'Nihai Tavsiye', description: 'Son öneri' }
-    ],
-    difficulty: 'Kolay'
+    difficulty: 'Orta',
+    isPremium: true // PREMIUM 🔒
   },
 
-  // Zamanlama
+  // --- ZAMANLAMA KATEGORİSİ ---
   {
     id: 'weekly',
     name: 'Haftalık',
@@ -364,7 +323,8 @@ export const SPREAD_TYPES: SpreadType[] = [
       { name: 'Cumartesi', description: 'Hafta sonu başlangıcı' },
       { name: 'Pazar', description: 'Dinlenme günü' }
     ],
-    difficulty: 'Orta'
+    difficulty: 'Orta',
+    isPremium: true // PREMIUM 🔒
   },
   {
     id: 'monthly',
@@ -378,7 +338,8 @@ export const SPREAD_TYPES: SpreadType[] = [
       { name: '3. Hafta', description: 'Üçüncü hafta gelişmeleri' },
       { name: '4. Hafta', description: 'Ay sonu' }
     ],
-    difficulty: 'Kolay'
+    difficulty: 'Kolay',
+    isPremium: true // PREMIUM 🔒
   },
   {
     id: 'yearly',
@@ -400,6 +361,7 @@ export const SPREAD_TYPES: SpreadType[] = [
       { name: 'Kasım', description: 'Derinleşme' },
       { name: 'Aralık', description: 'Yıl sonu kapanışı' }
     ],
-    difficulty: 'Zor'
+    difficulty: 'Zor',
+    isPremium: true // PREMIUM 🔒
   }
 ];

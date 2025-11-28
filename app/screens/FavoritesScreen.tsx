@@ -12,23 +12,32 @@ import {
   ScrollView
 } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
-import { useNavigation, useFocusEffect } from '@react-navigation/native';
+import { useNavigation, useFocusEffect, CompositeNavigationProp } from '@react-navigation/native';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
+import type { BottomTabNavigationProp } from '@react-navigation/bottom-tabs'; // EKLENDİ
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import {
   ReadingHistoryItem,
   getFavoriteReadings,
   toggleReadingFavorite
 } from '../services/readingHistoryService';
-import type { RootStackParamList } from '../types/navigation';
+import type { RootStackParamList, TabParamList } from '../types/navigation'; // TabParamList Eklendi
 import { MAJOR_ARCANA, getCardImage } from '../constants/tarotDeck';
 import MysticConfirmationModal from '../components/MysticConfirmationModal';
 
 const cardDataMap = new Map(MAJOR_ARCANA.map(card => [card.name, card]));
-type FavoritesScreenNavigationProp = NativeStackNavigationProp<RootStackParamList, 'Favorites'>;
+
+// DÜZELTME: Navigasyon tipi Composite olarak güncellendi
+// "Favoriler" tabı ve Root stack özelliklerini birleştiriyoruz.
+type FavoritesScreenNavigationProp = CompositeNavigationProp<
+  BottomTabNavigationProp<TabParamList, 'Favoriler'>,
+  NativeStackNavigationProp<RootStackParamList>
+>;
 
 const FavoritesScreen: React.FC = () => {
   const navigation = useNavigation<FavoritesScreenNavigationProp>();
+  const insets = useSafeAreaInsets();
   
   const [favoriteReadings, setFavoriteReadings] = useState<ReadingHistoryItem[]>([]);
   const [isLoading, setIsLoading] = useState(true);
@@ -137,7 +146,7 @@ const FavoritesScreen: React.FC = () => {
           data={favoriteReadings}
           renderItem={renderFavoriteCard}
           keyExtractor={(item) => item.id}
-          contentContainerStyle={styles.listContainer}
+          contentContainerStyle={[styles.listContainer, { paddingTop: insets.top + 20 }]} 
           showsVerticalScrollIndicator={false}
           ListEmptyComponent={renderEmptyState}
         />
@@ -158,99 +167,23 @@ const FavoritesScreen: React.FC = () => {
 };
 
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-  },
-  listContainer: {
-    paddingHorizontal: 20,
-    paddingTop: 20,
-    paddingBottom: 100,
-  },
-  favoriteCard: {
-    marginBottom: 16,
-    borderRadius: 16,
-    overflow: 'hidden',
-    borderWidth: 1,
-    borderColor: '#701a75',
-  },
-  cardGradient: {
-    padding: 16,
-  },
-  cardHeader: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'flex-start',
-    marginBottom: 16,
-  },
-  cardQuestion: {
-    flex: 1,
-    fontSize: 18,
-    fontWeight: 'bold',
-    // DEĞİŞİKLİK: Sorgu başlığı artık markamızın altın rengi
-    color: '#d4af37',
-    fontFamily: Platform.select({ ios: 'Georgia-Bold', android: 'serif' }),
-    lineHeight: 24,
-    marginRight: 10,
-  },
-  favoriteButton: {
-    padding: 4,
-  },
-  favoriteIcon: {
-    fontSize: 22,
-    color: '#d4af37',
-  },
-  cardImageGallery: {
-    paddingBottom: 16,
-    gap: 8,
-  },
-  miniCardContainer: {
-    width: 60,
-    aspectRatio: 0.6,
-    borderRadius: 6,
-    overflow: 'hidden',
-    borderWidth: 1,
-    borderColor: 'rgba(212, 175, 55, 0.5)',
-  },
-  miniCardImage: {
-    width: '100%',
-    height: '100%',
-  },
-  wisdomContainer: {
-    borderTopWidth: 1,
-    borderTopColor: 'rgba(212, 175, 55, 0.2)',
-    paddingTop: 12,
-  },
-  wisdomText: {
-    fontSize: 14,
-    color: 'rgba(243, 232, 255, 0.8)',
-    fontFamily: Platform.select({ ios: 'Georgia-Italic', android: 'serif' }),
-    fontStyle: 'italic',
-    lineHeight: 20,
-  },
-  emptyState: {
-    alignItems: 'center',
-    paddingVertical: 60,
-    paddingHorizontal: 40,
-    marginTop: '30%',
-  },
-  emptyStateIcon: {
-    fontSize: 64,
-    marginBottom: 16,
-  },
-  emptyStateTitle: {
-    fontSize: 20,
-    fontWeight: 'bold',
-    color: '#f3e8ff',
-    marginBottom: 8,
-    textAlign: 'center',
-    fontFamily: Platform.select({ ios: 'Georgia', android: 'serif' }),
-  },
-  emptyStateText: {
-    fontSize: 16,
-    color: 'rgba(243, 232, 255, 0.8)',
-    textAlign: 'center',
-    lineHeight: 24,
-  },
+  container: { flex: 1 },
+  listContainer: { paddingHorizontal: 20, paddingBottom: 100 },
+  favoriteCard: { marginBottom: 16, borderRadius: 16, overflow: 'hidden', borderWidth: 1, borderColor: '#701a75' },
+  cardGradient: { padding: 16 },
+  cardHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 16 },
+  cardQuestion: { flex: 1, fontSize: 18, fontWeight: 'bold', color: '#d4af37', fontFamily: Platform.select({ ios: 'Georgia-Bold', android: 'serif' }), lineHeight: 24, marginRight: 10 },
+  favoriteButton: { padding: 4 },
+  favoriteIcon: { fontSize: 22, color: '#d4af37' },
+  cardImageGallery: { paddingBottom: 16, gap: 8 },
+  miniCardContainer: { width: 60, aspectRatio: 0.6, borderRadius: 6, overflow: 'hidden', borderWidth: 1, borderColor: 'rgba(212, 175, 55, 0.5)' },
+  miniCardImage: { width: '100%', height: '100%' },
+  wisdomContainer: { borderTopWidth: 1, borderTopColor: 'rgba(212, 175, 55, 0.2)', paddingTop: 12 },
+  wisdomText: { fontSize: 14, color: 'rgba(243, 232, 255, 0.8)', fontFamily: Platform.select({ ios: 'Georgia-Italic', android: 'serif' }), fontStyle: 'italic', lineHeight: 20 },
+  emptyState: { alignItems: 'center', paddingVertical: 60, paddingHorizontal: 40, marginTop: '30%' },
+  emptyStateIcon: { fontSize: 64, marginBottom: 16 },
+  emptyStateTitle: { fontSize: 20, fontWeight: 'bold', color: '#f3e8ff', marginBottom: 8, textAlign: 'center', fontFamily: Platform.select({ ios: 'Georgia', android: 'serif' }) },
+  emptyStateText: { fontSize: 16, color: 'rgba(243, 232, 255, 0.8)', textAlign: 'center', lineHeight: 24 },
 });
 
 export default FavoritesScreen;

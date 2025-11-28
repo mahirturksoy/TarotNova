@@ -56,3 +56,5 @@ logs
 # Build outputs
 build/
 *.map
+
+app/config/firebaseConfig.ts

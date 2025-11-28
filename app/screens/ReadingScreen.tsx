@@ -24,7 +24,7 @@ import { useReadingContext } from "../context/ReadingContext";
 import { saveReading } from "../services/readingHistoryService";
 import type { RootStackParamList, TabParamList } from "../types/navigation";
 import ReadingDisplay from "../components/ReadingDisplay";
-import MysticSuccessModal from "../components/MysticSuccessModal"; // Yeni modalımızı import ediyoruz
+import MysticSuccessModal from "../components/MysticSuccessModal";
 
 type ReadingScreenNavigationProp = CompositeNavigationProp<
   NativeStackNavigationProp<RootStackParamList, "Reading">,
@@ -42,8 +42,6 @@ const ReadingScreen: React.FC = () => {
   } = useReadingContext();
   const [isSaving, setIsSaving] = useState(false);
   const [readingSaved, setReadingSaved] = useState(false);
-
-  // Modalın görünürlüğü için yeni state
   const [isSuccessModalVisible, setSuccessModalVisible] = useState(false);
 
   useEffect(() => {
@@ -83,17 +81,13 @@ const ReadingScreen: React.FC = () => {
       });
 
       setReadingSaved(true);
-
-      // Toast yerine modalı gösteriyoruz
       setSuccessModalVisible(true);
-
-      // 2 saniye sonra modalı otomatik olarak kapat
       setTimeout(() => {
         setSuccessModalVisible(false);
       }, 2000);
     } catch (error) {
       console.error("Kaydetme hatası:", error);
-      Alert.alert("Hata", "Okuma kaydedilemedi"); // Hata durumunda standart alert kalabilir
+      Alert.alert("Hata", "Okuma kaydedilemedi");
     } finally {
       setIsSaving(false);
     }
@@ -111,11 +105,15 @@ const ReadingScreen: React.FC = () => {
     return `Tarot Okuması - ${timeStr}`;
   };
 
+  // DÜZELTME: Navigasyon yapısı Tab Navigator'a uygun hale getirildi
   const handleNewReading = () => {
-    navigation.navigate("Home");
+    // Stack'i temizle ve Ana Sayfa tabına git
+    navigation.navigate("Main", { screen: "Ana Sayfa" } as any);
   };
+
   const handleViewHistory = () => {
-    navigation.getParent()?.navigate("Geçmiş");
+    // Geçmiş tabına git
+    navigation.navigate("Main", { screen: "Geçmiş" } as any);
   };
 
   if (isLoading || !currentReading) {
@@ -126,7 +124,7 @@ const ReadingScreen: React.FC = () => {
       >
         <View style={styles.loadingContainer}>
           <ActivityIndicator size="large" color="#d4af37" />
-          <Text style={styles.loadingText}>Nova yorumlıyor...</Text>
+          <Text style={styles.loadingText}>Nova yorumluyor...</Text>
           <Text style={styles.loadingSubText}>Kartlarınız analiz ediliyor</Text>
         </View>
       </LinearGradient>
@@ -143,7 +141,6 @@ const ReadingScreen: React.FC = () => {
   };
 
   return (
-    // <> fragment'ı ile sarmalıyoruz ki modal ve scrollview aynı seviyede olabilsin
     <>
       <ScrollView
         style={styles.container}
@@ -189,7 +186,6 @@ const ReadingScreen: React.FC = () => {
         </LinearGradient>
       </ScrollView>
 
-      {/* Modal'ımızı ekranın en dışına, ScrollView'dan sonra ekliyoruz */}
       <MysticSuccessModal
         visible={isSuccessModalVisible}
         title="Kaydedildi"
@@ -202,7 +198,7 @@ const ReadingScreen: React.FC = () => {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: "#1d112b", // Modal arkası için de tutarlı renk
+    backgroundColor: "#1d112b",
   },
   backgroundGradient: { flex: 1 },
   contentContainer: { paddingBottom: 100 },

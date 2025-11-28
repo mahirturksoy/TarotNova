@@ -9,7 +9,8 @@ import {
   FlatList,
   ActivityIndicator,
   Platform,
-  TouchableOpacity
+  TouchableOpacity,
+  Alert // Alert eklendi
 } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useNavigation, useRoute } from '@react-navigation/native';
@@ -63,8 +64,6 @@ const CardSelectionScreen: React.FC = () => {
   }, []);
 
   const handleCardSelect = (index: number): void => {
-    // YENİ KONTROL: Eğer kart zaten seçiliyse hiçbir şey yapma.
-    // Sadece kart seçili değilse VE hala yer varsa seçim yap.
     if (!selectedIndices.includes(index) && selectedIndices.length < requiredCardCount) {
       setSelectedIndices([...selectedIndices, index]);
     }
@@ -73,12 +72,22 @@ const CardSelectionScreen: React.FC = () => {
   const handleCompleteSelection = async (): Promise<void> => {
     if (selectedIndices.length === requiredCardCount && !isLoading) {
       const finalSelectedCards = selectedIndices.map(index => shuffledDeck[index].name);
+      
       try {
+        // API çağrısını bekle
         await generateReading(question, mood, finalSelectedCards, spreadType);
+        
+        // Sadece başarılı olursa sayfayı değiştir
         navigation.navigate('Reading');
+        
       } catch (error) {
-        console.error('Kart seçimi hatası:', error);
-        navigation.navigate('Reading');
+        console.error('Kart yorumlama hatası:', error);
+        // Kullanıcıya hata mesajı göster ve sayfada kal
+        Alert.alert(
+            "Bağlantı Sorunu",
+            "Yıldızlar şu an hizalanamadı. Lütfen internet bağlantını kontrol et ve tekrar dene.",
+            [{ text: "Tamam" }]
+        );
       }
     }
   };
@@ -161,121 +170,23 @@ const CardSelectionScreen: React.FC = () => {
 };
 
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-  },
-  header: {
-    paddingHorizontal: 20,
-    paddingTop: 20,
-    paddingBottom: 15,
-    borderBottomWidth: 1,
-    borderBottomColor: '#4a044e',
-  },
-  title: {
-    fontSize: 24,
-    fontWeight: 'bold' as const,
-    color: '#d4af37',
-    textAlign: 'center',
-    marginBottom: 4,
-    fontFamily: Platform.select({
-      ios: 'Georgia-Bold',
-      android: 'serif',
-      default: 'serif',
-    }),
-  },
-  spreadName: {
-    fontSize: 15,
-    color: '#d4af37',
-    textAlign: 'center',
-    marginBottom: 12,
-    fontFamily: Platform.select({
-      ios: 'Georgia',
-      android: 'serif',
-      default: 'serif',
-    }),
-  },
-  progressContainer: {
-    alignItems: 'center',
-  },
-  progressText: {
-    fontSize: 13,
-    color: '#d4af37',
-    marginBottom: 6,
-    fontFamily: Platform.select({
-      ios: 'Georgia',
-      android: 'serif',
-      default: 'serif',
-    }),
-  },
-  progressBar: {
-    width: '100%',
-    height: 4,
-    backgroundColor: 'rgba(243, 232, 255, 0.2)',
-    borderRadius: 2,
-    overflow: 'hidden',
-  },
-  progressFill: {
-    height: '100%',
-    backgroundColor: '#d4af37',
-    borderRadius: 2,
-  },
-  cardsContainer: {
-    paddingHorizontal: 10,
-    paddingTop: 15,
-    paddingBottom: 120,
-  },
-  row: {
-    justifyContent: 'space-around',
-  },
-  cardContainer: {
-    width: (width - 40) / 3,
-    marginBottom: 10,
-  },
-  floatingButtonContainer: {
-    position: 'absolute',
-    bottom: 95,
-    left: 20,
-    right: 20,
-  },
-  completeButton: {
-    borderRadius: 12,
-    overflow: 'hidden',
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.25,
-    shadowRadius: 8,
-    elevation: 8,
-  },
-  buttonGradient: {
-    paddingVertical: 16,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  loadingContainer: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 10,
-  },
-  loadingText: {
-    fontSize: 16,
-    fontWeight: '600' as const,
-    color: '#1d112b',
-    fontFamily: Platform.select({
-      ios: 'Georgia',
-      android: 'serif',
-      default: 'serif',
-    }),
-  },
-  completeButtonText: {
-    fontSize: 16,
-    fontWeight: 'bold' as const,
-    color: '#1d112b',
-    fontFamily: Platform.select({
-      ios: 'Georgia',
-      android: 'serif',
-      default: 'serif',
-    }),
-  },
+  container: { flex: 1 },
+  header: { paddingHorizontal: 20, paddingTop: 20, paddingBottom: 15, borderBottomWidth: 1, borderBottomColor: '#4a044e' },
+  title: { fontSize: 24, fontWeight: 'bold', color: '#d4af37', textAlign: 'center', marginBottom: 4, fontFamily: Platform.select({ ios: 'Georgia-Bold', android: 'serif', default: 'serif' }) },
+  spreadName: { fontSize: 15, color: '#d4af37', textAlign: 'center', marginBottom: 12, fontFamily: Platform.select({ ios: 'Georgia', android: 'serif', default: 'serif' }) },
+  progressContainer: { alignItems: 'center' },
+  progressText: { fontSize: 13, color: '#d4af37', marginBottom: 6, fontFamily: Platform.select({ ios: 'Georgia', android: 'serif', default: 'serif' }) },
+  progressBar: { width: '100%', height: 4, backgroundColor: 'rgba(243, 232, 255, 0.2)', borderRadius: 2, overflow: 'hidden' },
+  progressFill: { height: '100%', backgroundColor: '#d4af37', borderRadius: 2 },
+  cardsContainer: { paddingHorizontal: 10, paddingTop: 15, paddingBottom: 120 },
+  row: { justifyContent: 'space-around' },
+  cardContainer: { width: (width - 40) / 3, marginBottom: 10 },
+  floatingButtonContainer: { position: 'absolute', bottom: 95, left: 20, right: 20 },
+  completeButton: { borderRadius: 12, overflow: 'hidden', shadowColor: '#000', shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.25, shadowRadius: 8, elevation: 8 },
+  buttonGradient: { paddingVertical: 16, alignItems: 'center', justifyContent: 'center' },
+  loadingContainer: { flexDirection: 'row', alignItems: 'center', gap: 10 },
+  loadingText: { fontSize: 16, fontWeight: '600', color: '#1d112b', fontFamily: Platform.select({ ios: 'Georgia', android: 'serif', default: 'serif' }) },
+  completeButtonText: { fontSize: 16, fontWeight: 'bold', color: '#1d112b', fontFamily: Platform.select({ ios: 'Georgia', android: 'serif', default: 'serif' }) },
 });
 
 export default CardSelectionScreen;

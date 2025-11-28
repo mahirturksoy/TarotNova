@@ -1,6 +1,7 @@
 // app/services/novaApiService.ts
 
-const OPENROUTER_API_KEY = "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";
+// DİKKAT: Anahtarı buraya gömdük. Test ettikten sonra güvenlik için tekrar .env'e alabiliriz.
+const GEMINI_API_KEY = "AIzaSyA-Z1nDHGbF3nDeT4lav_UEO38h_Q1DzOw";
 
 interface ReadingPayload {
   question: string;
@@ -21,79 +22,83 @@ export interface TarotAIResponse {
 }
 
 export const generateTarotInterpretation = async (payload: ReadingPayload): Promise<TarotAIResponse> => {
-  // DEĞİŞİKLİK: Örnek JSON, genel yorumun nasıl olması gerektiğini daha net gösteriyor.
-  const jsonStructureExample = `
-  {
-    "holisticInterpretation": "Bu okuma, ani ve sarsıcı bir uyanışla başlayan, içsel bir aydınlanma yolculuğuna işaret ediyor. Kule kartının getirdiği yıkım, aslında eski ve size hizmet etmeyen kalıplardan kurtulmanız için bir fırsattır. Bu süreçte yalnız kalma ve derin düşünme ihtiyacı hissedeceksiniz, bu da Münzevi kartının bilgeliğidir. Son olarak, Asılan Adam kartı, olaylara farklı bir perspektiften bakmanız gerektiğini ve bazen en büyük ilerlemenin, durup bekleme cesaretini göstermekle mümkün olduğunu fısıldar.",
-    "cardDetails": [
-      {
-        "cardName": "The Tower",
-        "position": "Sizin Duygularınız",
-        "meaning": "### Sizin Duygularınız: The Tower (Kule)\\n**Kule kartı, sizde ani ve sarsıcı bir farkındalık taşıyor.** Heyecanlı ruh haliniz, aslında bir uyanışın tetikleyicisi. İlişkide beklenmedik bir gerçekle yüzleşiyorsunuz veya yapıların yıkılışına tanıklık ediyorsunuz.",
-        "advice": "Bu süreç ilk başta korkutucu gelse de, aslında eski kalıpların temizlenmesi için gerekli bir süreç. Enerjinizdeki coşkuyu, bu değişimi kabullenme cesaretinizden geliyor."
-      }
-    ],
-    "summary": "Özetle, bu açılım ani bir uyanışı, içsel bir arayışı ve olaylara farklı bir açıdan bakma gerekliliğini vurguluyor."
-  }
-  `;
+  
+  // ✅ ÇÖZÜM: Gemini 1.5 modelleri kullanımdan kalktı, 2.5 Flash kullanıyoruz
+  const MODEL_NAME = "gemini-2.5-flash";
+  
+  // ✅ v1beta API kullanmalıyız
+  const API_URL = `https://generativelanguage.googleapis.com/v1beta/models/${MODEL_NAME}:generateContent?key=${GEMINI_API_KEY}`;
 
-  // DEĞİŞİKLİK: Prompt, genel yorum ve kart detayları arasındaki ayrımı netleştirmek için güncellendi.
+  console.log(`🔑 Anahtar Kontrol (İlk 5 hane): ${GEMINI_API_KEY?.substring(0, 5)}...`);
+  console.log(`📡 İstek gönderiliyor: ${MODEL_NAME}`);
+
   const prompt = `
-    Bir tarot yorumcusu rolünü üstlen. Vereceğin cevabın tamamı, aşağıda belirttiğim JSON formatında olmalı. Metinleri Markdown kullanarak (### başlıklar, ** kalın metinler) zenginleştir.
-
-    Yorum Adımları:
-    1.  **holisticInterpretation:** İlk olarak, tüm kartları bir bütün olarak ele alan, hikayeyi anlatan, derin ve bütüncül bir genel yorum yaz.
-    2.  **cardDetails:** Ardından, her bir kart için pozisyonunu, anlamını ve tavsiyesini içeren ayrı ayrı analizler yap.
-    3.  **summary:** Son olarak, tüm yorumu bir veya iki cümleyle özetle.
+    Sen mistik ve bilge bir tarot yorumcususun. Aşağıdaki bilgilere göre bir yorum yap.
     
-    İstenen JSON Formatı:
-    ${jsonStructureExample}
-
-    Yorumu Yapacağın Bilgiler:
-    - Sorum: "${payload.question}"
-    - Ruh Halim: "${payload.mood}"
+    KULLANICI BİLGİLERİ:
+    - Soru: "${payload.question}"
+    - Ruh Hali: "${payload.mood}"
     - Açılım Tipi: "${payload.spreadType}"
-    - Seçilen Kartlar:
-      ${payload.cards.map(c => `- ${c.position}: ${c.cardName}`).join('\n      ')}
+    - Kartlar: ${payload.cards.map(c => `${c.cardName} (${c.position})`).join(', ')}
+
+    GÖREV:
+    Bana SADECE aşağıdaki JSON formatında bir yanıt ver. Başka hiçbir metin, açıklama veya markdown işareti ekleme.
     
-    Lütfen bu bilgilere ve adımlara dayanarak, yukarıdaki JSON formatına birebir uyan bir yorum oluştur.
+    {
+      "holisticInterpretation": "Genel yorum paragrafı (Markdown kullan)...",
+      "cardDetails": [
+        {
+          "cardName": "Kart Adı",
+          "position": "Pozisyon",
+          "meaning": "Anlamı",
+          "advice": "Tavsiye"
+        }
+      ],
+      "summary": "Özet cümle."
+    }
   `;
 
   try {
-    const response = await fetch("https://openrouter.ai/api/v1/chat/completions", {
+    const response = await fetch(API_URL, {
       method: "POST",
       headers: {
-        "Authorization": `Bearer ${OPENROUTER_API_KEY}`,
-        "Content-Type": "application/json",
-        "HTTP-Referer": "TarotNova"
+        "Content-Type": "application/json"
       },
       body: JSON.stringify({
-        "model": "deepseek/deepseek-chat-v3.1:free",
-        "messages": [
-          { "role": "system", "content": "Sen bilge ve empatik bir tarot yorumcususun. Cevapların her zaman Markdown ile zenginleştirilmiş, istenen JSON formatında ve mistik bir tonda olmalı." },
-          { "role": "user", "content": prompt }
-        ],
+        contents: [{
+          parts: [{ text: prompt }]
+        }],
+        generationConfig: {
+          temperature: 0.7,
+          topK: 40,
+          topP: 0.95,
+          maxOutputTokens: 2048,
+          responseMimeType: "application/json" // ✅ JSON modu
+        }
       })
     });
 
     if (!response.ok) {
       const errorText = await response.text();
-      console.error("API Hata Metni:", errorText);
-      throw new Error(`HTTP hatası! Durum: ${response.status}`);
+      console.error("🔥 API HATA DETAYI:", errorText);
+      throw new Error(`API Hatası (${response.status}): ${errorText}`);
     }
 
     const data = await response.json();
-    let content = data.choices[0].message.content;
-
-    // Bazen API cevabının başında veya sonunda ```json gibi işaretler olabilir, bunları temizleyelim.
-    content = content.replace(/^```json\n/, '').replace(/\n```$/, '');
-
-    const parsedResponse: TarotAIResponse = JSON.parse(content);
     
-    return parsedResponse;
+    if (data.candidates && data.candidates.length > 0 && data.candidates[0].content) {
+        let textResponse = data.candidates[0].content.parts[0].text;
+        
+        // ✅ Gemini bazen ```json ile sarabilir, temizleyelim
+        textResponse = textResponse.replace(/```json\n?/g, '').replace(/```\n?/g, '').trim();
+        
+        return JSON.parse(textResponse);
+    } else {
+        throw new Error("API boş yanıt döndü.");
+    }
 
   } catch (error) {
-    console.error("API isteği veya JSON ayrıştırma sırasında bir hata oluştu:", error);
-    throw new Error("Yorum oluşturulurken bir gizem perdesi aralandı ve bağlantı kurulamadı.");
+    console.error("Gemini Yorum Hatası:", error);
+    throw error;
   }
 };

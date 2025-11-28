@@ -14,8 +14,10 @@ import {
   ScrollView
 } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
-import { useNavigation, useFocusEffect } from '@react-navigation/native';
+import { useNavigation, useFocusEffect, CompositeNavigationProp } from '@react-navigation/native';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
+import type { BottomTabNavigationProp } from '@react-navigation/bottom-tabs'; // EKLENDİ
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import {
   ReadingHistoryItem,
@@ -23,17 +25,24 @@ import {
   toggleReadingFavorite,
   deleteReading,
 } from '../services/readingHistoryService';
-import type { RootStackParamList } from '../types/navigation';
+import type { RootStackParamList, TabParamList } from '../types/navigation'; // TabParamList eklendi
 import { MAJOR_ARCANA, getCardImage } from '../constants/tarotDeck';
 import MysticConfirmationModal from '../components/MysticConfirmationModal';
 
 const cardDataMap = new Map(MAJOR_ARCANA.map(card => [card.name, card]));
 
-type ReadingHistoryScreenNavigationProp = NativeStackNavigationProp<RootStackParamList, 'ReadingHistory'>;
+// DÜZELTME: Navigasyon tipi Composite olarak güncellendi
+// Hem Tab ("Geçmiş") hem de Stack (Root) özelliklerini birleştiriyoruz.
+type ReadingHistoryScreenNavigationProp = CompositeNavigationProp<
+  BottomTabNavigationProp<TabParamList, 'Geçmiş'>,
+  NativeStackNavigationProp<RootStackParamList>
+>;
+
 type FilterType = 'all' | 'thisWeek' | 'thisMonth';
 
 const ReadingHistoryScreen: React.FC = () => {
   const navigation = useNavigation<ReadingHistoryScreenNavigationProp>();
+  const insets = useSafeAreaInsets();
   
   const [readings, setReadings] = useState<ReadingHistoryItem[]>([]);
   const [filteredReadings, setFilteredReadings] = useState<ReadingHistoryItem[]>([]);
@@ -42,7 +51,6 @@ const ReadingHistoryScreen: React.FC = () => {
   const [refreshing, setRefreshing] = useState(false);
   const [isDeleteModalVisible, setDeleteModalVisible] = useState(false);
   const [readingToDelete, setReadingToDelete] = useState<string | null>(null);
-
 
   useFocusEffect(useCallback(() => { loadReadings(); }, []));
 
@@ -113,7 +121,6 @@ const ReadingHistoryScreen: React.FC = () => {
     }
   };
 
-
   const handleReadingPress = (reading: ReadingHistoryItem) => {
     navigation.navigate('ReadingDetail', { reading });
   };
@@ -175,14 +182,34 @@ const ReadingHistoryScreen: React.FC = () => {
   };
 
   const renderEmptyState = () => (
-    <View style={styles.emptyState}><Text style={styles.emptyStateIcon}>📚</Text><Text style={styles.emptyStateTitle}>Henüz okuma geçmişiniz yok</Text><Text style={styles.emptyStateText}>İlk tarot okumanızı yapın ve burada görüntüleyin</Text><TouchableOpacity style={styles.emptyStateButton} onPress={() => navigation.navigate('Home')}><LinearGradient colors={['#701a75', '#4a044e']} style={styles.emptyStateButtonGradient}><Text style={styles.emptyStateButtonText}>İlk Okumamı Yap</Text></LinearGradient></TouchableOpacity></View>
+    <View style={styles.emptyState}>
+      <Text style={styles.emptyStateIcon}>📚</Text>
+      <Text style={styles.emptyStateTitle}>Henüz okuma geçmişiniz yok</Text>
+      <Text style={styles.emptyStateText}>İlk tarot okumanızı yapın ve burada görüntüleyin</Text>
+      {/* DÜZELTME: Home yerine Ana Sayfa */}
+      <TouchableOpacity style={styles.emptyStateButton} onPress={() => navigation.navigate('Main', { screen: 'Ana Sayfa' } as any)}>
+        <LinearGradient colors={['#701a75', '#4a044e']} style={styles.emptyStateButtonGradient}>
+          <Text style={styles.emptyStateButtonText}>İlk Okumamı Yap</Text>
+        </LinearGradient>
+      </TouchableOpacity>
+    </View>
   );
 
   return (
     <>
       <LinearGradient colors={['#1d112b', '#2b173f', '#1d112b']} style={styles.container}>
-        {readings.length > 0 && renderFilterButtons()}
-        <FlatList data={filteredReadings} renderItem={renderReadingItem} keyExtractor={(item) => item.id} contentContainerStyle={styles.listContainer} showsVerticalScrollIndicator={false} refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor="#d4af37" />} ListEmptyComponent={isLoading ? null : renderEmptyState} />
+        <View style={{ flex: 1, paddingTop: insets.top }}>
+            {readings.length > 0 && renderFilterButtons()}
+            <FlatList 
+                data={filteredReadings} 
+                renderItem={renderReadingItem} 
+                keyExtractor={(item) => item.id} 
+                contentContainerStyle={styles.listContainer} 
+                showsVerticalScrollIndicator={false} 
+                refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor="#d4af37" />} 
+                ListEmptyComponent={isLoading ? null : renderEmptyState} 
+            />
+        </View>
       </LinearGradient>
 
       <MysticConfirmationModal
@@ -201,113 +228,26 @@ const ReadingHistoryScreen: React.FC = () => {
 
 const styles = StyleSheet.create({
   container: { flex: 1 },
-  filterContainer: {
-    flexDirection: 'row',
-    paddingHorizontal: 20,
-    marginTop: 20,
-    marginBottom: 20,
-    gap: 10,
-  },
-  filterButton: {
-    flex: 1,
-    paddingVertical: 10,
-    backgroundColor: 'rgba(0, 0, 0, 0.2)',
-    borderRadius: 20,
-    borderWidth: 1,
-    borderColor: 'rgba(212, 175, 55, 0.5)',
-    alignItems: 'center',
-  },
-  activeFilterButton: {
-    backgroundColor: '#d4af37',
-    borderColor: '#d4af37',
-  },
-  filterButtonText: {
-    fontSize: 14,
-    color: '#d4af37',
-    fontWeight: '600',
-    fontFamily: Platform.select({ios: 'Georgia', android: 'serif'}),
-  },
-  activeFilterButtonText: {
-    color: '#1d112b',
-  },
-  listContainer: {
-    paddingHorizontal: 20,
-    paddingBottom: 100,
-  },
-  readingCard: {
-    marginBottom: 16,
-    borderRadius: 16,
-    overflow: 'hidden',
-    borderWidth: 1,
-    borderColor: '#701a75',
-  },
-  readingCardGradient: {
-    padding: 16,
-  },
-  cardHeader: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'flex-start',
-    marginBottom: 16,
-  },
-  cardQuestion: {
-    flex: 1,
-    fontSize: 18,
-    fontWeight: 'bold',
-    // DEĞİŞİKLİK: Sorgu başlığı artık markamızın altın rengi
-    color: '#d4af37', 
-    fontFamily: Platform.select({ios: 'Georgia-Bold', android: 'serif'}),
-    lineHeight: 24,
-    marginRight: 10,
-  },
-  favoriteButton: {
-    padding: 4,
-  },
-  favoriteIcon: {
-    fontSize: 22,
-    color: 'rgba(243, 232, 255, 0.5)',
-  },
-  favoriteIconActive: {
-    color: '#d4af37',
-  },
-  cardImageGallery: {
-    paddingBottom: 16,
-    gap: 8,
-  },
-  miniCardContainer: {
-    width: 60,
-    aspectRatio: 0.6,
-    borderRadius: 6,
-    overflow: 'hidden',
-    borderWidth: 1,
-    borderColor: 'rgba(212, 175, 55, 0.5)',
-  },
-  miniCardImage: {
-    width: '100%',
-    height: '100%',
-  },
-  cardFooter: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    borderTopWidth: 1,
-    borderTopColor: 'rgba(212, 175, 55, 0.2)',
-    paddingTop: 12,
-  },
-  metaDataText: {
-    flex: 1,
-    fontSize: 12,
-    color: 'rgba(243, 232, 255, 0.7)',
-    fontFamily: Platform.select({ios: 'Georgia', android: 'serif'}),
-  },
-  deleteButton: {
-    padding: 4,
-  },
-  deleteButtonIcon: {
-    fontSize: 22,
-    color: '#d4af37',
-    fontWeight: 'bold',
-  },
+  filterContainer: { flexDirection: 'row', paddingHorizontal: 20, marginTop: 10, marginBottom: 20, gap: 10 },
+  filterButton: { flex: 1, paddingVertical: 10, backgroundColor: 'rgba(0, 0, 0, 0.2)', borderRadius: 20, borderWidth: 1, borderColor: 'rgba(212, 175, 55, 0.5)', alignItems: 'center' },
+  activeFilterButton: { backgroundColor: '#d4af37', borderColor: '#d4af37' },
+  filterButtonText: { fontSize: 14, color: '#d4af37', fontWeight: '600', fontFamily: Platform.select({ios: 'Georgia', android: 'serif'}) },
+  activeFilterButtonText: { color: '#1d112b' },
+  listContainer: { paddingHorizontal: 20, paddingBottom: 100 },
+  readingCard: { marginBottom: 16, borderRadius: 16, overflow: 'hidden', borderWidth: 1, borderColor: '#701a75' },
+  readingCardGradient: { padding: 16 },
+  cardHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 16 },
+  cardQuestion: { flex: 1, fontSize: 18, fontWeight: 'bold', color: '#d4af37', fontFamily: Platform.select({ios: 'Georgia-Bold', android: 'serif'}), lineHeight: 24, marginRight: 10 },
+  favoriteButton: { padding: 4 },
+  favoriteIcon: { fontSize: 22, color: 'rgba(243, 232, 255, 0.5)' },
+  favoriteIconActive: { color: '#d4af37' },
+  cardImageGallery: { paddingBottom: 16, gap: 8 },
+  miniCardContainer: { width: 60, aspectRatio: 0.6, borderRadius: 6, overflow: 'hidden', borderWidth: 1, borderColor: 'rgba(212, 175, 55, 0.5)' },
+  miniCardImage: { width: '100%', height: '100%' },
+  cardFooter: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', borderTopWidth: 1, borderTopColor: 'rgba(212, 175, 55, 0.2)', paddingTop: 12 },
+  metaDataText: { flex: 1, fontSize: 12, color: 'rgba(243, 232, 255, 0.7)', fontFamily: Platform.select({ios: 'Georgia', android: 'serif'}) },
+  deleteButton: { padding: 4 },
+  deleteButtonIcon: { fontSize: 22, color: '#d4af37', fontWeight: 'bold' },
   emptyState: { alignItems: 'center', paddingVertical: 60, paddingHorizontal: 40 },
   emptyStateIcon: { fontSize: 64, marginBottom: 16 },
   emptyStateTitle: { fontSize: 20, fontWeight: 'bold', color: '#f3e8ff', marginBottom: 8, textAlign: 'center', fontFamily: Platform.select({ ios: 'Georgia', android: 'serif' }) },

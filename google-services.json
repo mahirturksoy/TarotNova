@@ -1,0 +1,46 @@
+{
+  "project_info": {
+    "project_number": "896638057555",
+    "project_id": "tarotnova-11daf",
+    "storage_bucket": "tarotnova-11daf.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:896638057555:android:6261049905e74271fa1aa6",
+        "android_client_info": {
+          "package_name": "com.mahirturksoy.tarotnova"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "896638057555-e1mhgaq3qubearmknlm3j7be5qumtvoe.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyDhyAbjwkNWcvx9Wf_trTp97DrrB13N0m8"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "896638057555-e1mhgaq3qubearmknlm3j7be5qumtvoe.apps.googleusercontent.com",
+              "client_type": 3
+            },
+            {
+              "client_id": "896638057555-ges3idepc32o04949lb06qn9cg6eu696.apps.googleusercontent.com",
+              "client_type": 2,
+              "ios_info": {
+                "bundle_id": "com.mahirturksoy.tarotnova"
+              }
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

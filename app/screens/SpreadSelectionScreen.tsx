@@ -7,7 +7,8 @@ import {
   StyleSheet,
   ScrollView,
   TouchableOpacity,
-  Platform
+  Platform,
+  Alert
 } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useNavigation, useRoute } from '@react-navigation/native';
@@ -31,7 +32,25 @@ const SpreadSelectionScreen: React.FC = () => {
 
   const [selectedCategory, setSelectedCategory] = useState<SpreadCategory>('general');
 
+  // GEÇİCİ PREMIUM KONTROLÜ
+  // İleride buraya gerçek kullanıcı premium durumu gelecek.
+  // Şu an test için 'false' yapıyoruz ki kilitleri görelim.
+  const isUserPremium = false; 
+
   const handleSpreadSelect = (spreadType: SpreadType) => {
+    // PREMIUM KONTROLÜ
+    if (spreadType.isPremium && !isUserPremium) {
+      Alert.alert(
+        "Premium Özellik 🌟",
+        `"${spreadType.name}" açılımı sadece Premium üyeler içindir.\n\nSınırsız okuma ve tüm açılımlara erişmek için Premium'a geçin.`,
+        [
+          { text: "Vazgeç", style: "cancel" },
+          { text: "İncele", onPress: () => console.log("Premium'a yönlendir") } // İleride Premium ekranına yönlendireceğiz
+        ]
+      );
+      return;
+    }
+
     navigation.navigate('CardSelection', {
       question,
       mood,
@@ -47,10 +66,10 @@ const SpreadSelectionScreen: React.FC = () => {
       love: '♡',
       career: '◈',
       spiritual: '☾',
-      decision: '⟷', // <<< DEĞİŞİKLİK 1: İkon güncellendi
+      decision: '⟷',
       timing: '⟳'
     };
-    return icons[category];
+    return icons[category] || '✦';
   };
 
   const renderCategoryTabs = () => (
@@ -80,43 +99,70 @@ const SpreadSelectionScreen: React.FC = () => {
   );
 
   const renderSpreadCard = (spread: SpreadType) => {
+    const isLocked = spread.isPremium && !isUserPremium;
+
     return (
       <TouchableOpacity
         key={spread.id}
-        style={styles.spreadCard}
+        style={[styles.spreadCard, isLocked && styles.spreadCardLocked]}
         onPress={() => handleSpreadSelect(spread)}
         activeOpacity={0.8}
       >
         <LinearGradient
-          colors={['rgba(74, 4, 78, 0.3)', 'rgba(74, 4, 78, 0.5)']}
+          colors={isLocked 
+            ? ['rgba(74, 4, 78, 0.15)', 'rgba(74, 4, 78, 0.25)'] // Kilitli: Soluk
+            : ['rgba(74, 4, 78, 0.3)', 'rgba(74, 4, 78, 0.5)']  // Açık: Normal
+          }
           style={styles.spreadCardGradient}
         >
           <View style={styles.spreadCardHeader}>
-            <Text style={styles.spreadIcon}>{getCategoryIcon(spread.category)}</Text>
-            <Text style={styles.spreadName}>{spread.name}</Text>
+            <View style={{flexDirection: 'row', alignItems: 'center'}}>
+                <Text style={[styles.spreadIcon, isLocked && {opacity: 0.5}]}>{getCategoryIcon(spread.category)}</Text>
+                <Text style={[styles.spreadName, isLocked && {color: 'rgba(243, 232, 255, 0.6)'}]}>{spread.name}</Text>
+            </View>
+            
+            {/* KİLİT veya PREMIUM BADGE */}
+            {isLocked ? (
+                <View style={styles.lockBadge}>
+                    <Text style={styles.lockIcon}>🔒</Text>
+                </View>
+            ) : spread.isPremium ? (
+                <View style={styles.premiumBadge}>
+                    <Text style={styles.premiumBadgeText}>PREMIUM</Text>
+                </View>
+            ) : null}
           </View>
 
           <View style={styles.spreadMetaContainer}>
-            <View style={styles.metaBadge}>
-              <Text style={styles.metaText}>{spread.cardCount} Kart</Text>
-            </View>
-            {/* <<< DEĞİŞİKLİK 2: Zorluk seviyesi etiketi kaldırıldı */}
-          </View>
-          
-          <Text style={styles.spreadDescription}>{spread.description}</Text>
-          
-          <View style={styles.positionsContainer}>
-            <Text style={styles.positionsTitle}>Pozisyonlar:</Text>
-            <View style={styles.positionsList}>
-              {spread.positions.map((position, index) => (
-                <View key={index} style={styles.positionItem}>
-                  <Text style={styles.positionText}>
-                    <Text style={styles.positionNumber}>{index + 1}</Text> {position.name}
-                  </Text>
-                </View>
-              ))}
+            <View style={[styles.metaBadge, isLocked && {backgroundColor: 'rgba(255,255,255,0.05)'}]}>
+              <Text style={[styles.metaText, isLocked && {color: 'rgba(255,255,255,0.4)'}]}>{spread.cardCount} Kart</Text>
             </View>
           </View>
+          
+          <Text style={[styles.spreadDescription, isLocked && {color: 'rgba(243, 232, 255, 0.4)'}]}>
+            {spread.description}
+          </Text>
+          
+          {/* Pozisyonlar: Kilitliyse gösterme, yerine "Premium Özel" yaz */}
+          {!isLocked ? (
+            <View style={styles.positionsContainer}>
+              <Text style={styles.positionsTitle}>Pozisyonlar:</Text>
+              <View style={styles.positionsList}>
+                {spread.positions.map((position, index) => (
+                  <View key={index} style={styles.positionItem}>
+                    <Text style={styles.positionText}>
+                      <Text style={styles.positionNumber}>{index + 1}</Text> {position.name}
+                    </Text>
+                  </View>
+                ))}
+              </View>
+            </View>
+          ) : (
+            <View style={styles.lockedContent}>
+                <Text style={styles.lockedText}>Bu özel açılımı kullanmak için kilidi açın ✨</Text>
+            </View>
+          )}
+
         </LinearGradient>
       </TouchableOpacity>
     );
@@ -248,12 +294,16 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: '#701a75',
   },
+  spreadCardLocked: {
+    borderColor: 'rgba(255, 255, 255, 0.1)', // Kilitliyse çerçeve silikleşir
+  },
   spreadCardGradient: {
     padding: 16,
   },
   spreadCardHeader: {
     flexDirection: 'row',
     alignItems: 'center',
+    justifyContent: 'space-between', // İkon ve kilit için
     marginBottom: 12,
   },
   spreadIcon: {
@@ -322,6 +372,41 @@ const styles = StyleSheet.create({
     fontSize: 12,
     color: 'rgba(243, 232, 255, 0.9)',
   },
+  // KİLİT STİLLERİ
+  lockBadge: {
+    backgroundColor: 'rgba(0,0,0,0.3)',
+    borderRadius: 12,
+    padding: 6,
+  },
+  lockIcon: {
+    fontSize: 16,
+  },
+  premiumBadge: {
+    backgroundColor: '#d4af37',
+    paddingHorizontal: 6,
+    paddingVertical: 2,
+    borderRadius: 4,
+  },
+  premiumBadgeText: {
+    color: '#1d112b',
+    fontSize: 10,
+    fontWeight: 'bold',
+  },
+  lockedContent: {
+    marginTop: 10,
+    padding: 10,
+    backgroundColor: 'rgba(255,255,255,0.05)',
+    borderRadius: 8,
+    borderWidth: 1,
+    borderColor: 'rgba(255,255,255,0.1)',
+    borderStyle: 'dashed',
+    alignItems: 'center'
+  },
+  lockedText: {
+    color: 'rgba(255,255,255,0.6)',
+    fontStyle: 'italic',
+    fontSize: 13,
+  }
 });
 
 export default SpreadSelectionScreen;
