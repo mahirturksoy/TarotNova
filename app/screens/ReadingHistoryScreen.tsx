@@ -16,8 +16,9 @@ import {
 import { LinearGradient } from 'expo-linear-gradient';
 import { useNavigation, useFocusEffect, CompositeNavigationProp } from '@react-navigation/native';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
-import type { BottomTabNavigationProp } from '@react-navigation/bottom-tabs'; // EKLENDİ
+import type { BottomTabNavigationProp } from '@react-navigation/bottom-tabs';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { useTranslation } from 'react-i18next'; // <-- ÇEVİRİ EKLENDİ
 
 import {
   ReadingHistoryItem,
@@ -25,14 +26,12 @@ import {
   toggleReadingFavorite,
   deleteReading,
 } from '../services/readingHistoryService';
-import type { RootStackParamList, TabParamList } from '../types/navigation'; // TabParamList eklendi
+import type { RootStackParamList, TabParamList } from '../types/navigation';
 import { MAJOR_ARCANA, getCardImage } from '../constants/tarotDeck';
 import MysticConfirmationModal from '../components/MysticConfirmationModal';
 
 const cardDataMap = new Map(MAJOR_ARCANA.map(card => [card.name, card]));
 
-// DÜZELTME: Navigasyon tipi Composite olarak güncellendi
-// Hem Tab ("Geçmiş") hem de Stack (Root) özelliklerini birleştiriyoruz.
 type ReadingHistoryScreenNavigationProp = CompositeNavigationProp<
   BottomTabNavigationProp<TabParamList, 'Geçmiş'>,
   NativeStackNavigationProp<RootStackParamList>
@@ -43,6 +42,7 @@ type FilterType = 'all' | 'thisWeek' | 'thisMonth';
 const ReadingHistoryScreen: React.FC = () => {
   const navigation = useNavigation<ReadingHistoryScreenNavigationProp>();
   const insets = useSafeAreaInsets();
+  const { t, i18n } = useTranslation(); // <-- HOOK
   
   const [readings, setReadings] = useState<ReadingHistoryItem[]>([]);
   const [filteredReadings, setFilteredReadings] = useState<ReadingHistoryItem[]>([]);
@@ -58,8 +58,9 @@ const ReadingHistoryScreen: React.FC = () => {
     try {
       setIsLoading(true);
       const history = await getReadingHistory();
-      setReadings(history);
-      applyFilter(history, activeFilter);
+      const sortedHistory = history.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
+      setReadings(sortedHistory);
+      applyFilter(sortedHistory, activeFilter);
     } catch (error) {
       console.error('Okuma geçmişi yüklenemedi:', error);
     } finally {
@@ -115,7 +116,7 @@ const ReadingHistoryScreen: React.FC = () => {
     } catch (error) {
       console.error('Okuma silinemedi:', error);
       setDeleteModalVisible(false);
-      Alert.alert('Hata', 'Okuma silinemedi');
+      Alert.alert(t('common.error'), 'Okuma silinemedi');
     } finally {
       setReadingToDelete(null);
     }
@@ -125,9 +126,19 @@ const ReadingHistoryScreen: React.FC = () => {
     navigation.navigate('ReadingDetail', { reading });
   };
 
+  const formatDate = (dateString: string) => {
+    const date = new Date(dateString);
+    // Dil desteği ile tarih formatlama
+    return date.toLocaleDateString(i18n.language, { day: 'numeric', month: 'long', year: 'numeric' });
+  };
+
   const renderFilterButtons = () => (
     <View style={styles.filterContainer}>
-      {[{ key: 'all', label: 'Tümü' }, { key: 'thisWeek', label: 'Bu Hafta' }, { key: 'thisMonth', label: 'Bu Ay' }].map((filter) => (
+      {[
+          { key: 'all', label: t('history.filters.all') }, 
+          { key: 'thisWeek', label: t('history.filters.week') }, 
+          { key: 'thisMonth', label: t('history.filters.month') }
+      ].map((filter) => (
         <TouchableOpacity
           key={filter.key}
           style={[styles.filterButton, activeFilter === filter.key as FilterType && styles.activeFilterButton]}
@@ -142,8 +153,8 @@ const ReadingHistoryScreen: React.FC = () => {
   );
 
   const renderReadingItem = ({ item }: { item: ReadingHistoryItem }) => {
-    const readingDate = new Date(item.createdAt);
-    const formattedDate = readingDate.toLocaleDateString('tr-TR', { day: 'numeric', month: 'long', year: 'numeric' });
+    // Spread adını dinamik olarak çevir (varsa)
+    const spreadName = item.spreadType?.id ? t(`spread.types.${item.spreadType.id}.name`) : item.spreadType?.name || t('spread.types.single-card.name');
 
     return (
       <TouchableOpacity style={styles.readingCard} onPress={() => handleReadingPress(item)} activeOpacity={0.8}>
@@ -170,7 +181,7 @@ const ReadingHistoryScreen: React.FC = () => {
 
           <View style={styles.cardFooter}>
             <Text style={styles.metaDataText} numberOfLines={1}>
-              {formattedDate} • {item.spreadType?.name || 'Klasik Okuma'}
+              {formatDate(item.createdAt)} • {spreadName}
             </Text>
             <TouchableOpacity style={styles.deleteButton} onPress={() => handleDeleteReading(item.id)}>
               <Text style={styles.deleteButtonIcon}>✕</Text>
@@ -181,15 +192,26 @@ const ReadingHistoryScreen: React.FC = () => {
     );
   };
 
+  // DÜZELTME: Mistik Parşömen İkonu ve Gradient Buton Eklendi
   const renderEmptyState = () => (
     <View style={styles.emptyState}>
-      <Text style={styles.emptyStateIcon}>📚</Text>
-      <Text style={styles.emptyStateTitle}>Henüz okuma geçmişiniz yok</Text>
-      <Text style={styles.emptyStateText}>İlk tarot okumanızı yapın ve burada görüntüleyin</Text>
-      {/* DÜZELTME: Home yerine Ana Sayfa */}
-      <TouchableOpacity style={styles.emptyStateButton} onPress={() => navigation.navigate('Main', { screen: 'Ana Sayfa' } as any)}>
-        <LinearGradient colors={['#701a75', '#4a044e']} style={styles.emptyStateButtonGradient}>
-          <Text style={styles.emptyStateButtonText}>İlk Okumamı Yap</Text>
+      
+      <View style={styles.mysticIconContainer}>
+        <Text style={styles.mysticIconSmall}>✧</Text>
+        <Text style={styles.mysticIconLarge}>📜</Text>
+        <Text style={styles.mysticIconSmall}>✧</Text>
+      </View>
+
+      <Text style={styles.emptyStateTitle}>{t('history.empty.title')}</Text>
+      <Text style={styles.emptyStateText}>{t('history.empty.subtitle')}</Text>
+      
+      <TouchableOpacity 
+        style={styles.ctaButton} 
+        onPress={() => navigation.navigate('Main', { screen: 'Ana Sayfa' } as any)}
+        activeOpacity={0.8}
+      >
+        <LinearGradient colors={['#d4af37', '#F59E0B']} style={styles.ctaGradient}>
+          <Text style={styles.ctaButtonText}>{t('history.empty.btn')}</Text>
         </LinearGradient>
       </TouchableOpacity>
     </View>
@@ -215,11 +237,11 @@ const ReadingHistoryScreen: React.FC = () => {
       <MysticConfirmationModal
         visible={isDeleteModalVisible}
         onClose={() => setDeleteModalVisible(false)}
-        title="Sonsuzluğa Uğurla"
-        subtitle="Bu okumayı anılar arasından sonsuzluğa uğurlamak bir daha geri getiremez. Devam edilsin mi?"
+        title={t('history.deleteModal.title')}
+        subtitle={t('history.deleteModal.message')}
         buttons={[
-          { text: 'İptal', onPress: () => setDeleteModalVisible(false), style: 'default' },
-          { text: 'Sil', onPress: confirmDelete, style: 'destructive' },
+          { text: t('common.cancel'), onPress: () => setDeleteModalVisible(false), style: 'default' },
+          { text: t('common.delete'), onPress: confirmDelete, style: 'destructive' },
         ]}
       />
     </>
@@ -248,13 +270,20 @@ const styles = StyleSheet.create({
   metaDataText: { flex: 1, fontSize: 12, color: 'rgba(243, 232, 255, 0.7)', fontFamily: Platform.select({ios: 'Georgia', android: 'serif'}) },
   deleteButton: { padding: 4 },
   deleteButtonIcon: { fontSize: 22, color: '#d4af37', fontWeight: 'bold' },
-  emptyState: { alignItems: 'center', paddingVertical: 60, paddingHorizontal: 40 },
-  emptyStateIcon: { fontSize: 64, marginBottom: 16 },
+  
+  // YENİ BOŞ EKRAN STİLLERİ
+  emptyState: { alignItems: 'center', justifyContent: 'center', paddingVertical: 60, paddingHorizontal: 40, marginTop: '20%' },
+  mysticIconContainer: { flexDirection: 'row', alignItems: 'center', marginBottom: 24 },
+  mysticIconLarge: { fontSize: 64, marginHorizontal: 10 }, // Parşömen İkonu
+  mysticIconSmall: { fontSize: 32, color: '#d4af37', textShadowColor: 'rgba(212, 175, 55, 0.5)', textShadowOffset: { width: 0, height: 0 }, textShadowRadius: 10 }, // Yıldızlar
+  
   emptyStateTitle: { fontSize: 20, fontWeight: 'bold', color: '#f3e8ff', marginBottom: 8, textAlign: 'center', fontFamily: Platform.select({ ios: 'Georgia', android: 'serif' }) },
-  emptyStateText: { fontSize: 16, color: 'rgba(243, 232, 255, 0.8)', textAlign: 'center', lineHeight: 24, marginBottom: 24 },
-  emptyStateButton: { borderRadius: 12, overflow: 'hidden' },
-  emptyStateButtonGradient: { paddingHorizontal: 24, paddingVertical: 12 },
-  emptyStateButtonText: { fontSize: 16, fontWeight: 'bold', color: '#f3e8ff' },
+  emptyStateText: { fontSize: 16, color: 'rgba(243, 232, 255, 0.8)', textAlign: 'center', lineHeight: 24, marginBottom: 30 },
+  
+  // YENİ GRADIENT BUTON STİLİ
+  ctaButton: { borderRadius: 12, overflow: 'hidden', shadowColor: '#d4af37', shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.3, shadowRadius: 8, elevation: 8, width: '100%' },
+  ctaGradient: { paddingVertical: 16, alignItems: 'center' },
+  ctaButtonText: { fontSize: 18, fontWeight: 'bold', color: '#1d112b', fontFamily: Platform.select({ ios: 'Georgia-Bold', android: 'serif' }) },
 });
 
 export default ReadingHistoryScreen;

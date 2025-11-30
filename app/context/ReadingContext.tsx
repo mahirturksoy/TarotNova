@@ -1,9 +1,7 @@
 // app/context/ReadingContext.tsx
 
 import React, { createContext, useContext, useState, ReactNode } from 'react';
-// DEĞİŞİKLİK: Yeni API servisimizden hem fonksiyonu hem de yeni tip tanımını alıyoruz
-import { generateTarotInterpretation, TarotAIResponse } from '../services/novaApiService'; 
-import { SpreadType, SpreadPosition } from '../constants/spreadTypes';
+import { TarotAIResponse } from '../services/novaApiService';
 
 export interface CardDetail {
   cardName: string;
@@ -12,120 +10,68 @@ export interface CardDetail {
   advice: string;
 }
 
-export interface CurrentReading {
+interface ReadingData {
   question: string;
   mood: string;
+  // Basitleştirilmiş Spread Type (Service ile uyumlu)
+  spreadType?: { id: string; name: string; cardCount: number }; 
   selectedCards: string[];
-  spreadType?: SpreadType;
 }
 
-export interface ReadingContextType {
-  currentReading: CurrentReading | null;
+interface ReadingContextType {
+  currentReading: ReadingData | null;
   holisticInterpretation: string | null;
   cardDetails: CardDetail[] | null;
   summary: string | null;
   isLoading: boolean;
-  error: string | null;
-  generateReading: (
-    question: string, 
-    mood: string, 
-    selectedCards: string[],
-    spreadType?: SpreadType
-  ) => Promise<void>;
-  clearReading: () => void;
+  startNewReading: (data: ReadingData, response: TarotAIResponse) => void;
+  generateReading: (question: string, mood: string, cards: string[], spreadType?: any) => Promise<void>; 
+  setIsLoading: (loading: boolean) => void; 
 }
 
 const ReadingContext = createContext<ReadingContextType | undefined>(undefined);
 
-export const useReadingContext = () => {
-  const context = useContext(ReadingContext);
-  if (!context) {
-    throw new Error('useReadingContext must be used within a ReadingProvider');
-  }
-  return context;
-};
-
-interface ReadingProviderProps {
-  children: ReactNode;
-}
-
-export const ReadingProvider: React.FC<ReadingProviderProps> = ({ children }) => {
-  const [currentReading, setCurrentReading] = useState<CurrentReading | null>(null);
+export const ReadingProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
+  const [currentReading, setCurrentReading] = useState<ReadingData | null>(null);
   const [holisticInterpretation, setHolisticInterpretation] = useState<string | null>(null);
   const [cardDetails, setCardDetails] = useState<CardDetail[] | null>(null);
   const [summary, setSummary] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(false);
-  const [error, setError] = useState<string | null>(null);
 
-  const generateReading = async (
-    question: string, 
-    mood: string, 
-    selectedCards: string[],
-    spreadType?: SpreadType
-  ) => {
-    setIsLoading(true);
-    setError(null);
-    setHolisticInterpretation(null);
-    setCardDetails(null);
-    setSummary(null);
-
-    try {
-      setCurrentReading({
-        question,
-        mood,
-        selectedCards,
-        spreadType
-      });
-
-      const payload = {
-        question: question,
-        mood: mood,
-        spreadType: spreadType?.name || "Genel Açılım",
-        cards: selectedCards.map((cardName, index) => ({
-          cardName: cardName,
-          position: spreadType?.positions[index]?.name || `Kart ${index + 1}`
-        }))
-      };
-
-      // DEĞİŞİKLİK: Yeni servisimiz artık bize tüm yorumu içeren bir nesne veriyor.
-      const aiResponse: TarotAIResponse = await generateTarotInterpretation(payload);
-      
-      // DEĞİŞİKLİK: Gelen yapılandırılmış veriyi state'lere kaydediyoruz.
-      setHolisticInterpretation(aiResponse.holisticInterpretation);
-      setCardDetails(aiResponse.cardDetails);
-      setSummary(aiResponse.summary);
-      
-    } catch (err) {
-      console.error('Okuma oluşturma hatası:', err);
-      const errorMessage = err instanceof Error ? err.message : 'Okuma oluşturulurken bir hata oluştu.';
-      setError(errorMessage);
-    } finally {
-      setIsLoading(false);
-    }
+  const startNewReading = (data: ReadingData, response: TarotAIResponse) => {
+    setCurrentReading(data);
+    setHolisticInterpretation(response.holisticInterpretation);
+    setCardDetails(response.cardDetails);
+    setSummary(response.summary);
+    setIsLoading(false);
   };
 
-  const clearReading = () => {
-    setCurrentReading(null);
-    setHolisticInterpretation(null);
-    setCardDetails(null);
-    setSummary(null);
-    setError(null);
-  };
-
-  const contextValue: ReadingContextType = {
-    currentReading,
-    holisticInterpretation,
-    cardDetails,
-    summary,
-    isLoading,
-    error,
-    generateReading,
-    clearReading,
+  const generateReading = async (question: string, mood: string, cards: string[], spreadType?: any) => {
+     console.warn("generateReading deprecated.");
   };
 
   return (
-    <ReadingContext.Provider value={contextValue}>
+    <ReadingContext.Provider
+      value={{
+        currentReading,
+        holisticInterpretation,
+        cardDetails,
+        summary,
+        isLoading,
+        startNewReading,
+        generateReading,
+        setIsLoading,
+      }}
+    >
       {children}
     </ReadingContext.Provider>
   );
+};
+
+export const useReadingContext = () => {
+  const context = useContext(ReadingContext);
+  if (context === undefined) {
+    throw new Error('useReadingContext must be used within a ReadingProvider');
+  }
+  return context;
 };

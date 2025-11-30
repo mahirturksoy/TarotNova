@@ -15,6 +15,7 @@ export type RootStackParamList = {
   Reading: undefined;
   ReadingDetail: { reading: ReadingHistoryItem };
   Auth: undefined;
+  Premium: undefined;
 };
 
 // Alt Tab Navigator'ımızın yönettiği ekranlar.

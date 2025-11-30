@@ -1,0 +1,103 @@
+// app/services/authService.ts
+
+import { 
+  signInWithEmailAndPassword, 
+  createUserWithEmailAndPassword, 
+  signInWithCredential, 
+  GoogleAuthProvider,
+  UserCredential 
+} from 'firebase/auth';
+import { GoogleSignin } from '@react-native-google-signin/google-signin';
+import { auth } from '../config/firebaseConfig';
+
+// Hata Tipi Tanımı
+export interface AuthError {
+  code: string;
+  message: string;
+}
+
+// Google Sign-In Yapılandırması
+// Not: webClientId, Firebase konsolundan alınan ID'dir. 
+// google-services.json kullanıyorsan otomatik algılayabilir ama bazen manuel vermek gerekir.
+GoogleSignin.configure({
+  scopes: ['email', 'profile'],
+});
+
+// E-posta ile Giriş
+export const signInWithEmail = async (email: string, pass: string): Promise<UserCredential> => {
+  try {
+    return await signInWithEmailAndPassword(auth, email, pass);
+  } catch (error: any) {
+    throw formatAuthError(error);
+  }
+};
+
+// E-posta ile Kayıt
+export const signUpWithEmail = async (email: string, pass: string): Promise<UserCredential> => {
+  try {
+    return await createUserWithEmailAndPassword(auth, email, pass);
+  } catch (error: any) {
+    throw formatAuthError(error);
+  }
+};
+
+// Google ile Giriş
+export const signInWithGoogle = async (): Promise<UserCredential | null> => {
+  try {
+    // Cihazda Google Play Services var mı kontrol et
+    await GoogleSignin.hasPlayServices();
+    
+    // Google'dan giriş yap ve token al
+    const userInfo = await GoogleSignin.signIn();
+    
+    // Eğer idToken yoksa (nadiren olur) hata fırlat
+    if (!userInfo.data?.idToken) {
+        throw new Error('Google Sign-In failed: No idToken received');
+    }
+
+    // Token ile Firebase Credential oluştur
+    const googleCredential = GoogleAuthProvider.credential(userInfo.data.idToken);
+
+    // Firebase'e giriş yap
+    return await signInWithCredential(auth, googleCredential);
+  } catch (error: any) {
+    // Kullanıcı iptal ettiyse sessizce dön
+    if (error.code === '12501' || error.code === 'SIGN_IN_CANCELLED') {
+        throw { code: 'auth/cancelled-popup-request', message: 'Giriş iptal edildi.' };
+    }
+    throw formatAuthError(error);
+  }
+};
+
+// Hata Mesajlarını Türkçeleştirme/Formatlama Yardımcısı
+const formatAuthError = (error: any): AuthError => {
+  let message = 'Bir hata oluştu.';
+  
+  switch (error.code) {
+    case 'auth/invalid-email':
+      message = 'Geçersiz e-posta adresi.';
+      break;
+    case 'auth/user-disabled':
+      message = 'Bu hesap devre dışı bırakılmış.';
+      break;
+    case 'auth/user-not-found':
+      message = 'Böyle bir kullanıcı bulunamadı.';
+      break;
+    case 'auth/wrong-password':
+      message = 'Hatalı şifre.';
+      break;
+    case 'auth/email-already-in-use':
+      message = 'Bu e-posta adresi zaten kullanımda.';
+      break;
+    case 'auth/weak-password':
+      message = 'Şifre çok zayıf (en az 6 karakter olmalı).';
+      break;
+    case 'auth/network-request-failed':
+      message = 'İnternet bağlantınızı kontrol edin.';
+      break;
+    default:
+      message = error.message || 'Giriş işlemi başarısız.';
+  }
+
+  return { code: error.code, message };
+};

@@ -1,58 +1,51 @@
+// app/components/UserInputFormComponent.tsx
+
 import React, { useState } from 'react';
 import { View, Text, TextInput, TouchableOpacity, StyleSheet, ActivityIndicator } from 'react-native';
 import { Keyboard } from 'react-native';
+import { useTranslation } from 'react-i18next'; // <-- ÇEVİRİ EKLENDİ
 
-// Ruh hali seçenekleri için tip tanımı
-type MoodType = 'Mutlu' | 'Kararsız' | 'Endişeli' | null;
+type MoodType = 'Mutlu' | 'Kararsız' | 'Endişeli' | null; // Tip tanımları aynı
 
-// UserInputFormComponent props interface tanımı
 interface UserInputFormComponentProps {
   onSubmit: (question: string, mood: string) => void;
-  isLoading?: boolean; // Loading durumu için opsiyonel prop
+  isLoading?: boolean;
 }
 
-// Kullanıcı girdi formu bileşeni - Modern mobil tasarım
 const UserInputFormComponent: React.FC<UserInputFormComponentProps> = ({ 
   onSubmit, 
   isLoading = false 
 }) => {
-  // Kullanıcının sorusu için state
+  const { t } = useTranslation(); // <-- HOOK
   const [question, setQuestion] = useState<string>('');
-  
-  // Kullanıcının seçili ruh hali için state
   const [mood, setMood] = useState<MoodType>(null);
 
-  // Ruh hali seçenekleri
-  const moodOptions: { value: MoodType; label: string; emoji: string }[] = [
-    { value: 'Mutlu', label: 'Mutlu', emoji: '😊' },
-    { value: 'Kararsız', label: 'Kararsız', emoji: '🤔' },
-    { value: 'Endişeli', label: 'Endişeli', emoji: '😟' },
+  const moodOptions = [
+    { value: 'Mutlu', label: t('home.moods.happy'), emoji: '😊' },
+    { value: 'Kararsız', label: t('home.moods.neutral'), emoji: '🤔' },
+    { value: 'Endişeli', label: t('home.moods.sad'), emoji: '😟' },
   ];
 
-  // Form submit işlemi
- const handleSubmit = () => {
-  if (question.trim() && mood && !isLoading) {
-    Keyboard.dismiss(); // Klavyeyi kapat
-    onSubmit(question.trim(), mood);
-  }
-};
+  // ... (Geri kalan mantık aynı)
 
-  // Form geçerliliğini kontrol et
+  const handleSubmit = () => {
+    if (question.trim() && mood && !isLoading) {
+      Keyboard.dismiss();
+      onSubmit(question.trim(), mood);
+    }
+  };
+
   const isFormValid = question.trim().length > 0 && mood !== null && !isLoading;
 
   return (
     <View style={styles.container}>
-      {/* Soru girişi bölümü */}
       <View style={styles.section}>
-        <Text style={styles.sectionLabel}>Sorunuzu yazın</Text>
+        <Text style={styles.sectionLabel}>{t('home.askNova')}</Text>
         <TextInput
-          style={[
-            styles.questionInput,
-            isLoading && styles.disabledInput
-          ]}
+          style={[styles.questionInput, isLoading && styles.disabledInput]}
           value={question}
           onChangeText={setQuestion}
-          placeholder="Nova AI'ya sormak istediğiniz soruyu yazın..."
+          placeholder={t('home.askPlaceholder')}
           placeholderTextColor="rgba(255, 255, 255, 0.5)"
           multiline
           numberOfLines={4}
@@ -61,28 +54,19 @@ const UserInputFormComponent: React.FC<UserInputFormComponentProps> = ({
         />
       </View>
 
-      {/* Ruh hali seçimi bölümü */}
       <View style={styles.section}>
-        <Text style={styles.sectionLabel}>Ruh halinizi seçin</Text>
+        <Text style={styles.sectionLabel}>{t('home.moodLabel')}</Text>
         <View style={styles.moodGrid}>
           {moodOptions.map((option) => (
             <TouchableOpacity
               key={option.value}
-              style={[
-                styles.moodButton,
-                mood === option.value && styles.selectedMoodButton,
-                isLoading && styles.disabledButton
-              ]}
-              onPress={() => !isLoading && setMood(option.value)}
+              style={[styles.moodButton, mood === option.value && styles.selectedMoodButton, isLoading && styles.disabledButton]}
+              onPress={() => !isLoading && setMood(option.value as MoodType)}
               disabled={isLoading}
               activeOpacity={0.7}
             >
               <Text style={styles.moodEmoji}>{option.emoji}</Text>
-              <Text style={[
-                styles.moodButtonText,
-                mood === option.value && styles.selectedMoodButtonText,
-                isLoading && styles.disabledText
-              ]}>
+              <Text style={[styles.moodButtonText, mood === option.value && styles.selectedMoodButtonText, isLoading && styles.disabledText]}>
                 {option.label}
               </Text>
             </TouchableOpacity>
@@ -90,12 +74,8 @@ const UserInputFormComponent: React.FC<UserInputFormComponentProps> = ({
         </View>
       </View>
 
-      {/* Ana yorumlama butonu */}
       <TouchableOpacity
-        style={[
-          styles.submitButton,
-          !isFormValid && styles.submitButtonDisabled
-        ]}
+        style={[styles.submitButton, !isFormValid && styles.submitButtonDisabled]}
         onPress={handleSubmit}
         disabled={!isFormValid}
         activeOpacity={0.8}
@@ -103,17 +83,17 @@ const UserInputFormComponent: React.FC<UserInputFormComponentProps> = ({
         {isLoading ? (
           <View style={styles.loadingContainer}>
             <ActivityIndicator size="small" color="#ffffff" />
-            <Text style={styles.loadingText}>Nova başlatılıyor...</Text>
+            <Text style={styles.loadingText}>{t('home.analyzing')}</Text>
           </View>
         ) : (
-          <Text style={styles.submitButtonText}>Nova ile Yorumla</Text>
+          <Text style={styles.submitButtonText}>{t('home.interpretBtn')}</Text>
         )}
       </TouchableOpacity>
     </View>
   );
 };
 
-// Stil tanımlamaları
+// ... Styles aynı
 const styles = StyleSheet.create({
   container: {
     backgroundColor: 'rgba(255, 255, 255, 0.95)',

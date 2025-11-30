@@ -19,6 +19,7 @@ import {
 import type { NativeStackNavigationProp } from "@react-navigation/native-stack";
 import type { BottomTabNavigationProp } from "@react-navigation/bottom-tabs";
 import AsyncStorage from "@react-native-async-storage/async-storage";
+import { useTranslation } from "react-i18next"; // <-- ÇEVİRİ
 
 import { useReadingContext } from "../context/ReadingContext";
 import { saveReading } from "../services/readingHistoryService";
@@ -33,6 +34,7 @@ type ReadingScreenNavigationProp = CompositeNavigationProp<
 
 const ReadingScreen: React.FC = () => {
   const navigation = useNavigation<ReadingScreenNavigationProp>();
+  const { t } = useTranslation(); // <-- Hook
   const {
     currentReading,
     holisticInterpretation,
@@ -46,7 +48,12 @@ const ReadingScreen: React.FC = () => {
 
   useEffect(() => {
     checkAutoSave();
-  }, [currentReading, holisticInterpretation]);
+    // Başlığı dinamik olarak güncelle
+    navigation.setOptions({
+        title: t('reading.title'),
+        headerBackTitle: t('common.back')
+    });
+  }, [currentReading, holisticInterpretation, t]);
 
   const checkAutoSave = async () => {
     try {
@@ -87,7 +94,7 @@ const ReadingScreen: React.FC = () => {
       }, 2000);
     } catch (error) {
       console.error("Kaydetme hatası:", error);
-      Alert.alert("Hata", "Okuma kaydedilemedi");
+      Alert.alert(t('common.error'), "Okuma kaydedilemedi");
     } finally {
       setIsSaving(false);
     }
@@ -105,14 +112,11 @@ const ReadingScreen: React.FC = () => {
     return `Tarot Okuması - ${timeStr}`;
   };
 
-  // DÜZELTME: Navigasyon yapısı Tab Navigator'a uygun hale getirildi
   const handleNewReading = () => {
-    // Stack'i temizle ve Ana Sayfa tabına git
     navigation.navigate("Main", { screen: "Ana Sayfa" } as any);
   };
 
   const handleViewHistory = () => {
-    // Geçmiş tabına git
     navigation.navigate("Main", { screen: "Geçmiş" } as any);
   };
 
@@ -124,8 +128,8 @@ const ReadingScreen: React.FC = () => {
       >
         <View style={styles.loadingContainer}>
           <ActivityIndicator size="large" color="#d4af37" />
-          <Text style={styles.loadingText}>Nova yorumluyor...</Text>
-          <Text style={styles.loadingSubText}>Kartlarınız analiz ediliyor</Text>
+          <Text style={styles.loadingText}>{t('home.analyzing')}</Text>
+          <Text style={styles.loadingSubText}>Nova AI</Text>
         </View>
       </LinearGradient>
     );
@@ -163,7 +167,7 @@ const ReadingScreen: React.FC = () => {
                 ) : (
                   <>
                     <Text style={styles.actionButtonIcon}>✦</Text>
-                    <Text style={styles.actionButtonText}>Kaydet</Text>
+                    <Text style={styles.actionButtonText}>{t('common.save')}</Text>
                   </>
                 )}
               </TouchableOpacity>
@@ -173,14 +177,14 @@ const ReadingScreen: React.FC = () => {
               onPress={handleNewReading}
             >
               <Text style={styles.actionButtonIcon}>+</Text>
-              <Text style={styles.actionButtonText}>Yeni Okuma</Text>
+              <Text style={styles.actionButtonText}>{t('reading.newReading')}</Text>
             </TouchableOpacity>
             <TouchableOpacity
               style={[styles.actionButtonBase, styles.actionButton]}
               onPress={handleViewHistory}
             >
               <Text style={styles.actionButtonIcon}>❋</Text>
-              <Text style={styles.actionButtonText}>Geçmiş</Text>
+              <Text style={styles.actionButtonText}>{t('tab.history')}</Text>
             </TouchableOpacity>
           </View>
         </LinearGradient>
@@ -188,8 +192,8 @@ const ReadingScreen: React.FC = () => {
 
       <MysticSuccessModal
         visible={isSuccessModalVisible}
-        title="Kaydedildi"
-        subtitle="Bu okuma artık geçmişinizde parlıyor."
+        title={t('reading.modalSaved.title')}
+        subtitle={t('reading.modalSaved.subtitle')}
       />
     </>
   );

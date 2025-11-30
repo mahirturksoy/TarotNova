@@ -1,6 +1,8 @@
 // app/services/novaApiService.ts
 
-// DİKKAT: Anahtarı buraya gömdük. Test ettikten sonra güvenlik için tekrar .env'e alabiliriz.
+import i18n from '../i18n'; // <-- 1. Dil ayarını içeri aldık
+
+// Çalışan Anahtarın
 const GEMINI_API_KEY = "AIzaSyA-Z1nDHGbF3nDeT4lav_UEO38h_Q1DzOw";
 
 interface ReadingPayload {
@@ -21,40 +23,49 @@ export interface TarotAIResponse {
   summary: string;
 }
 
+// 2. Dil İsimlerini Tanımladık (AI'ya İngilizce komut vereceğiz)
+const LANGUAGE_NAMES: Record<string, string> = {
+  tr: 'Turkish',
+  en: 'English'
+};
+
 export const generateTarotInterpretation = async (payload: ReadingPayload): Promise<TarotAIResponse> => {
   
-  // ✅ ÇÖZÜM: Gemini 1.5 modelleri kullanımdan kalktı, 2.5 Flash kullanıyoruz
+  // 3. O anki aktif dili buluyoruz
+  const currentLangCode = i18n.language || 'tr';
+  const targetLanguage = LANGUAGE_NAMES[currentLangCode] || 'English';
+
+  // ✅ ÇÖZÜM: Senin çalışan kodundaki Model ve URL yapısı (Aynen korundu)
   const MODEL_NAME = "gemini-2.5-flash";
-  
-  // ✅ v1beta API kullanmalıyız
   const API_URL = `https://generativelanguage.googleapis.com/v1beta/models/${MODEL_NAME}:generateContent?key=${GEMINI_API_KEY}`;
 
-  console.log(`🔑 Anahtar Kontrol (İlk 5 hane): ${GEMINI_API_KEY?.substring(0, 5)}...`);
+  console.log(`🌍 Nova Dili: ${targetLanguage} (${currentLangCode})`);
   console.log(`📡 İstek gönderiliyor: ${MODEL_NAME}`);
 
+  // 4. Prompt'u güncelledik: "Cevabı şu dilde ver" kuralı eklendi.
   const prompt = `
-    Sen mistik ve bilge bir tarot yorumcususun. Aşağıdaki bilgilere göre bir yorum yap.
+    You are a mystical tarot reader named Nova.
     
-    KULLANICI BİLGİLERİ:
-    - Soru: "${payload.question}"
-    - Ruh Hali: "${payload.mood}"
-    - Açılım Tipi: "${payload.spreadType}"
-    - Kartlar: ${payload.cards.map(c => `${c.cardName} (${c.position})`).join(', ')}
+    IMPORTANT RULE: You MUST write your ENTIRE response in ${targetLanguage}.
+    
+    USER INFO:
+    - Question: "${payload.question}"
+    - Mood: "${payload.mood}"
+    - Spread Type: "${payload.spreadType}"
+    - Cards: ${payload.cards.map(c => `${c.cardName} (${c.position})`).join(', ')}
 
-    GÖREV:
-    Bana SADECE aşağıdaki JSON formatında bir yanıt ver. Başka hiçbir metin, açıklama veya markdown işareti ekleme.
-    
+    RESPONSE FORMAT (JSON ONLY, NO MARKDOWN BLOCK):
     {
-      "holisticInterpretation": "Genel yorum paragrafı (Markdown kullan)...",
+      "holisticInterpretation": "Detailed interpretation in ${targetLanguage} (Use Markdown formatting like bold/italic)",
       "cardDetails": [
         {
-          "cardName": "Kart Adı",
-          "position": "Pozisyon",
-          "meaning": "Anlamı",
-          "advice": "Tavsiye"
+          "cardName": "Card Name translated to ${targetLanguage}", 
+          "position": "Position Name translated to ${targetLanguage}",
+          "meaning": "Meaning in ${targetLanguage}",
+          "advice": "Advice in ${targetLanguage}"
         }
       ],
-      "summary": "Özet cümle."
+      "summary": "Short summary in ${targetLanguage}"
     }
   `;
 
@@ -69,11 +80,12 @@ export const generateTarotInterpretation = async (payload: ReadingPayload): Prom
           parts: [{ text: prompt }]
         }],
         generationConfig: {
+          // ✅ Senin çalışan config ayarların (Aynen korundu)
           temperature: 0.7,
           topK: 40,
           topP: 0.95,
           maxOutputTokens: 2048,
-          responseMimeType: "application/json" // ✅ JSON modu
+          responseMimeType: "application/json" 
         }
       })
     });
@@ -89,7 +101,7 @@ export const generateTarotInterpretation = async (payload: ReadingPayload): Prom
     if (data.candidates && data.candidates.length > 0 && data.candidates[0].content) {
         let textResponse = data.candidates[0].content.parts[0].text;
         
-        // ✅ Gemini bazen ```json ile sarabilir, temizleyelim
+        // ✅ Senin çalışan temizlik kodun (Aynen korundu)
         textResponse = textResponse.replace(/```json\n?/g, '').replace(/```\n?/g, '').trim();
         
         return JSON.parse(textResponse);

@@ -1,0 +1,235 @@
+{
+  "common": {
+    "welcome": "Hoşgeldin",
+    "loading": "Yükleniyor...",
+    "error": "Hata",
+    "success": "Başarılı",
+    "cancel": "Vazgeç",
+    "save": "Kaydet",
+    "saved": "Kaydedildi",
+    "delete": "Sil",
+    "close": "Kapat",
+    "ok": "Tamam",
+    "continue": "Devam Et",
+    "back": "Geri"
+  },
+  "tab": {
+    "home": "Ana Sayfa",
+    "history": "Geçmiş",
+    "favorites": "Favoriler",
+    "profile": "Profil"
+  },
+  "home": {
+    "dailyCard": "Günün Kartı",
+    "askNova": "Nova'ya Sor",
+    "askPlaceholder": "Nova'ya sormak istediğiniz soruyu yazın...",
+    "moodLabel": "Ruh halinizi seçin",
+    "moods": {
+      "excited": "Heyecanlı",
+      "calm": "Sakin",
+      "curious": "Meraklı",
+      "tired": "Yorgun",
+      "hopeful": "Umutlu",
+      "happy": "Mutlu",
+      "neutral": "Kararsız",
+      "sad": "Endişeli"
+    },
+    "interpretBtn": "Nova ile Yorumla",
+    "analyzing": "Nova başlatılıyor..."
+  },
+  "profile": {
+    "guest": "Misafir Kullanıcı",
+    "traveler": "Mistik Gezgin",
+    "level": "Seviye",
+    "loginCard": {
+      "title": "Yolculuğunu Güvenceye Al",
+      "subtitle": "Okumalarını kaydetmek ve her yerden erişmek için giriş yap."
+    },
+    "stats": {
+      "title": "İstatistiklerim",
+      "readings": "Okuma",
+      "favorites": "Favori",
+      "streak": "Seri",
+      "days": "gün"
+    },
+    "preferences": {
+      "title": "Tercihler",
+      "notifications": "Bildirimler",
+      "notificationsDesc": "Nova'dan gelen fısıltıları ve yenilikleri al",
+      "reminder": "Günlük Hatırlatıcı",
+      "reminderDesc": "Günün rehberliğini almak için nazik bir anımsatıcı",
+      "autoSave": "Otomatik Kayıt",
+      "autoSaveDesc": "Yolculuğunun hiçbir anının kaybolmamasını sağla",
+      "language": "Dil / Language",
+      "languageDesc": "Uygulama ve yorum dilini değiştirin"
+    },
+    "account": {
+      "title": "Hesap",
+      "about": "Hakkında",
+      "privacy": "Gizlilik Politikası",
+      "logout": "Çıkış Yap",
+      "deleteData": "Tüm Verileri Sil"
+    },
+    "premiumCard": {
+      "title": "Premium'a Geç",
+      "desc": "Sınırsız okuma ve özel açılımlar",
+      "badge": "Fırsat"
+    }
+  },
+  "spread": {
+    "title": "Açılım Seçimi",
+    "categories": {
+      "general": "Genel",
+      "love": "Aşk",
+      "career": "Kariyer",
+      "spiritual": "Ruhsal",
+      "decision": "Karar",
+      "timing": "Zaman"
+    },
+    "categoryDescriptions": {
+      "general": "Hayatın genel akışı ve günlük sorular",
+      "love": "İlişkiler ve duygusal bağlar",
+      "career": "İş hayatı ve finansal durumlar",
+      "spiritual": "İçsel yolculuk ve farkındalık",
+      "decision": "Karar verme anları",
+      "timing": "Zaman odaklı öngörüler"
+    },
+    "types": {
+      "single-card": { "name": "Tek Kart", "description": "Günlük rehberlik veya hızlı cevap için." },
+      "past-present-future": { "name": "Geçmiş - Şimdi - Gelecek", "description": "Zaman çizgisinde durum analizi." },
+      "yes-no": { "name": "Evet / Hayır", "description": "Net bir soruya net bir cevap." },
+      "celtic-cross": { "name": "Kelt Haçı", "description": "En kapsamlı ve detaylı tarot açılımı." },
+      "relationship-check": { "name": "İlişki Kontrolü", "description": "Mevcut ilişkinizin sağlık durumu." },
+      "love-cross": { "name": "Aşk Haçı", "description": "İlişkinizin derinlemesine analizi." },
+      "soulmate": { "name": "Ruh Eşi", "description": "Ruh eşinizi bulma yolculuğu." },
+      "work-situation": { "name": "İş Durumu", "description": "Mevcut iş durumunuzun analizi." },
+      "career-path": { "name": "Kariyer Yolu", "description": "Kariyer gelişiminiz için rehberlik." },
+      "financial": { "name": "Finansal Durum", "description": "Maddi durum ve para akışı." },
+      "spiritual-growth": { "name": "Ruhsal Gelişim", "description": "Ruhsal yolculuğunuzda rehberlik." },
+      "chakra": { "name": "Çakra Açılımı", "description": "7 çakranızın enerji durumu." },
+      "moon-phases": { "name": "Ay Evreleri", "description": "Ay döngüsü ile uyumlu rehberlik." },
+      "pros-cons": { "name": "Artı ve Eksiler", "description": "Bir kararın avantaj ve dezavantajları." },
+      "decision-making": { "name": "Karar Verme", "description": "Önemli kararlar için analiz." },
+      "two-paths": { "name": "İki Yol", "description": "İki seçenek arasında seçim." },
+      "weekly": { "name": "Haftalık", "description": "Bu hafta için günlük rehberlik." },
+      "monthly": { "name": "Aylık", "description": "Ay boyunca sizi bekleyenler." },
+      "yearly": { "name": "Yıllık", "description": "Tüm yıl için aylık rehberlik." }
+    },
+    "cardsCount": "{{count}} Kart",
+    "positions": "Pozisyonlar:",
+    "locked": "Bu özel açılımı kullanmak için kilidi açın ✨",
+    "premiumAlert": {
+      "title": "Premium Özellik 🌟",
+      "message": "\"{{spreadName}}\" açılımı sadece Premium üyeler içindir.\n\nSınırsız okuma ve tüm açılımlara erişmek için Premium'a geçin.",
+      "examine": "İncele"
+    }
+  },
+  "cardSelection": {
+    "title": "Kartlarınızı Seçin",
+    "selected": "kart seçildi",
+    "button": "Kartları Yorumla"
+  },
+  "reading": {
+    "title": "Nova Yorumu",
+    "yourQuestion": "Sorunuz:",
+    "selectedCards": "Seçtiğiniz Kartlar:",
+    "generalInterpretation": "Genel Yorum",
+    "cardAnalysis": "Kart Analizleri",
+    "summary": "Özet",
+    "readMore": "Devamını Oku",
+    "meaning": "Anlam",
+    "advice": "Tavsiye",
+    "newReading": "Yeni Okuma",
+    "modalSaved": {
+      "title": "Kaydedildi",
+      "subtitle": "Bu okuma artık geçmişinizde parlıyor."
+    }
+  },
+  "history": {
+    "title": "Okuma Geçmişi",
+    "empty": {
+      "title": "Henüz okuma geçmişiniz yok",
+      "subtitle": "İlk tarot okumanızı yapın ve burada görüntüleyin",
+      "btn": "İlk Okumamı Yap"
+    },
+    "filters": {
+      "all": "Tümü",
+      "week": "Bu Hafta",
+      "month": "Bu Ay"
+    },
+    "deleteModal": {
+      "title": "Sonsuzluğa Uğurla",
+      "message": "Bu okumayı anılar arasından sonsuzluğa uğurlamak bir daha geri getiremez. Devam edilsin mi?"
+    }
+  },
+  "favorites": {
+    "title": "Favoriler",
+    "empty": {
+      "title": "Henüz favori okumanız yok",
+      "subtitle": "Beğendiğiniz okumaları favorilere ekleyerek buradan kolayca erişebilirsiniz"
+    },
+    "removeModal": {
+      "title": "Favorilerden Çıkar",
+      "message": "Bu özel anıyı favorileriniz arasından kaldırmak istediğinize emin misiniz?",
+      "btn": "Çıkar"
+    }
+  },
+  "auth": {
+    "login": "Giriş Yap",
+    "register": "Kayıt Ol",
+    "createAccount": "Hesap Oluştur",
+    "email": "E-posta Adresi",
+    "password": "Şifre",
+    "or": "veya",
+    "googleBtn": "Google ile Devam Et",
+    "noAccount": "Hesabın yok mu?",
+    "hasAccount": "Zaten bir hesabın var mı?"
+  },
+  "premium": {
+    "title": "TarotNova Premium",
+    "subtitle": "Sınırsız potansiyelinizi açığa çıkarın.",
+    "features": {
+      "f1": "Tüm Özel Açılımların Kilidini Aç",
+      "d1": "Kelt Haçı, Aşk Analizi ve daha fazlası",
+      "f2": "Sınırsız Günlük Okuma",
+      "d2": "Enerjini istediğin kadar sorgula",
+      "f3": "Derin Yapay Zeka Analizi",
+      "d3": "Daha kapsamlı ve detaylı yorumlar",
+      "f4": "Reklamsız Deneyim",
+      "d4": "Sadece sen ve kartların odaklanın"
+    },
+    "btn": "Premium'a Geç",
+    "price": "₺50.00 / Ay",
+    "notNow": "Şimdilik Değil"
+  },
+  "legal": {
+    "aboutTitle": "TarotNova Hakkında",
+    "aboutContent": "TarotNova, kadim tarot bilgeliğini modern yapay zeka teknolojisiyle buluşturan yeni nesil bir rehberlik uygulamasıdır.\n\nSürüm: 1.0.0",
+    "privacyTitle": "Gizlilik Politikası",
+    "privacyContent": "Verileriniz Google Firebase altyapısında güvenle saklanmaktadır.\n\n- Kişisel bilgileriniz 3. şahıslarla paylaşılmaz.\n- Tarot yorumları için Google Gemini AI teknolojisi kullanılmaktadır.\n- Hesabınızı ve verilerinizi dilediğiniz zaman silebilirsiniz."
+  },
+  "cardMessages": {
+    "The Fool": "Bugün yeni başlangıçlara korkusuzca adım at.",
+    "The Magician": "İçindeki gücü ve yeteneklerini kullanma zamanı.",
+    "The High Priestess": "Sezgilerine güven, cevaplar içinde saklı.",
+    "The Empress": "Yaratıcılığını ve şefkatini besle.",
+    "The Emperor": "Hayatına düzen ve istikrar getir.",
+    "The Hierophant": "Geleneklerden ve bilgelerden öğren.",
+    "The Lovers": "Kalbinin sesini dinle ve önemli seçimler yap.",
+    "The Chariot": "İradeni kullanarak hedeflerine doğru ilerle.",
+    "Strength": "Cesaretini ve içsel gücünü kucakla.",
+    "The Hermit": "Kendi içine dönüp bilgeliği ara.",
+    "Wheel of Fortune": "Değişimin kaçınılmaz döngüsünü kabul et.",
+    "Justice": "Dengeyi bul ve adil kararlar ver.",
+    "The Hanged Man": "Farklı bir bakış açısı kazanmak için dur ve düşün.",
+    "Death": "Eskiyi bırak, büyük bir dönüşüme hazır ol.",
+    "Temperance": "Uyum ve dengeyi hayatının merkezine al.",
+    "The Devil": "Seni sınırlayan zincirleri fark et ve kır.",
+    "The Tower": "Ani değişimler, yeni bir temel kurman için fırsattır.",
+    "The Star": "Umutlarını ve ilhamını kaybetme.",
+    "The Moon": "Bilinçaltının ve rüyalarının rehberliğine inan.",
+    "The Sun": "Neşeyi, başarıyı ve aydınlığı kucakla.",
+    "Judgement": "Geçmişi değerlendir ve yeniden doğuşu yaşa.",
+    "The World": "Bir döngüyü başarıyla tamamlamanın keyfini çıkar."
+  }
+}

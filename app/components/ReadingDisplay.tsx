@@ -13,8 +13,8 @@ import {
   UIManager
 } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
-// DEĞİŞİKLİK: Markdown kütüphanesi import edildi
 import Markdown from 'react-native-markdown-display';
+import { useTranslation } from 'react-i18next'; // <-- ÇEVİRİ
 
 import { CardDetail } from '../context/ReadingContext';
 import { MAJOR_ARCANA, getCardImage } from '../constants/tarotDeck';
@@ -37,6 +37,7 @@ interface ReadingDisplayProps {
 }
 
 const ReadingDisplay: React.FC<ReadingDisplayProps> = ({ readingData }) => {
+  const { t } = useTranslation(); // <-- Hook
   const [showFullInterpretation, setShowFullInterpretation] = useState(false);
   const [expandedCardIndex, setExpandedCardIndex] = useState<number | null>(null);
 
@@ -53,7 +54,6 @@ const ReadingDisplay: React.FC<ReadingDisplayProps> = ({ readingData }) => {
     setExpandedCardIndex(expandedCardIndex === index ? null : index);
   };
 
-  // DEĞİŞİKLİK: Markdown stilleri, uygulamanın genel temasına uygun olarak tanımlandı.
   const markdownStyles = {
     body: {
       fontSize: 15,
@@ -80,12 +80,12 @@ const ReadingDisplay: React.FC<ReadingDisplayProps> = ({ readingData }) => {
         style={styles.headerSection}
       >
         <View style={styles.questionContainer}>
-          <Text style={styles.questionLabel}>Sorunuz:</Text>
+          <Text style={styles.questionLabel}>{t('reading.yourQuestion')}</Text>
           <Text style={styles.questionText}>"{question}"</Text>
         </View>
 
         <View style={styles.cardsContainer}>
-          <Text style={styles.cardsLabel}>Seçtiğiniz Kartlar:</Text>
+          <Text style={styles.cardsLabel}>{t('reading.selectedCards')}</Text>
           <ScrollView
             horizontal
             showsHorizontalScrollIndicator={false}
@@ -109,7 +109,7 @@ const ReadingDisplay: React.FC<ReadingDisplayProps> = ({ readingData }) => {
         <View style={styles.section}>
           <View style={styles.sectionHeader}>
             <Text style={styles.sectionIcon}>✦</Text>
-            <Text style={styles.sectionTitle}>Genel Yorum</Text>
+            <Text style={styles.sectionTitle}>{t('reading.generalInterpretation')}</Text>
           </View>
           <View style={styles.divider} />
           <TouchableOpacity
@@ -120,13 +120,12 @@ const ReadingDisplay: React.FC<ReadingDisplayProps> = ({ readingData }) => {
               colors={['rgba(74, 4, 78, 0.2)', 'rgba(74, 4, 78, 0.3)']}
               style={styles.contentCard}
             >
-              {/* DEĞİŞİKLİK: Text yerine Markdown bileşeni kullanıldı */}
               <Markdown style={markdownStyles}>
                 {showFullInterpretation ? holisticInterpretation : `${holisticInterpretation.substring(0, 300)}...`}
               </Markdown>
               {!showFullInterpretation && holisticInterpretation.length > 300 && (
                 <View style={styles.readMoreContainer}>
-                  <Text style={styles.readMoreText}>Devamını Oku ⌄</Text>
+                  <Text style={styles.readMoreText}>{t('reading.readMore')} ⌄</Text>
                 </View>
               )}
             </LinearGradient>
@@ -138,7 +137,7 @@ const ReadingDisplay: React.FC<ReadingDisplayProps> = ({ readingData }) => {
         <View style={styles.section}>
           <View style={styles.sectionHeader}>
             <Text style={styles.sectionIcon}>◈</Text>
-            <Text style={styles.sectionTitle}>Kart Analizleri</Text>
+            <Text style={styles.sectionTitle}>{t('reading.cardAnalysis')}</Text>
           </View>
           <View style={styles.divider} />
           {cardDetails.map((detail, index) => {
@@ -159,11 +158,10 @@ const ReadingDisplay: React.FC<ReadingDisplayProps> = ({ readingData }) => {
                 </View>
                 {isExpanded && (
                   <View style={styles.accordionContent}>
-                    {/* DEĞİŞİKLİK: Text yerine Markdown bileşeni kullanıldı */}
-                    <Text style={styles.accordionLabel}>Anlam:</Text>
+                    <Text style={styles.accordionLabel}>{t('reading.meaning')}:</Text>
                     <Markdown style={markdownStyles}>{detail.meaning}</Markdown>
                     <View style={{height: 10}}/>
-                    <Text style={styles.accordionLabel}>Tavsiye:</Text>
+                    <Text style={styles.accordionLabel}>{t('reading.advice')}:</Text>
                     <Markdown style={markdownStyles}>{detail.advice}</Markdown>
                   </View>
                 )}
@@ -177,14 +175,13 @@ const ReadingDisplay: React.FC<ReadingDisplayProps> = ({ readingData }) => {
         <View style={styles.section}>
           <View style={styles.sectionHeader}>
             <Text style={styles.sectionIcon}>◉</Text>
-            <Text style={styles.sectionTitle}>Özet</Text>
+            <Text style={styles.sectionTitle}>{t('reading.summary')}</Text>
           </View>
           <View style={styles.divider} />
           <LinearGradient
             colors={['rgba(74, 4, 78, 0.2)', 'rgba(74, 4, 78, 0.3)']}
             style={styles.contentCard}
           >
-            {/* DEĞİŞİKLİK: Text yerine Markdown bileşeni kullanıldı */}
             <Markdown style={markdownStyles}>{summary}</Markdown>
           </LinearGradient>
         </View>
@@ -193,9 +190,7 @@ const ReadingDisplay: React.FC<ReadingDisplayProps> = ({ readingData }) => {
   );
 };
 
-
 const styles = StyleSheet.create({
-    // ... (diğer stilleriniz aynı kalıyor)
     headerSection: {
         marginHorizontal: 12,
         borderRadius: 16,

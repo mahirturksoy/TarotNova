@@ -1,18 +1,7 @@
 // app/screens/ProfileScreen.tsx
 
 import React, { useState, useEffect, useRef, useCallback } from 'react';
-import {
-  View,
-  Text,
-  StyleSheet,
-  ScrollView,
-  TouchableOpacity,
-  Alert,
-  Platform,
-  Animated,
-  Easing,
-  Linking
-} from 'react-native';
+import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Platform, Animated, Easing, Linking } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useNavigation, useFocusEffect, CompositeNavigationProp } from '@react-navigation/native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
@@ -20,16 +9,13 @@ import { auth } from '../config/firebaseConfig';
 import { onAuthStateChanged, User, signOut } from 'firebase/auth';
 import { getUserStats, clearAllHistory } from '../services/readingHistoryService';
 import MysticConfirmationModal from '../components/MysticConfirmationModal';
-import MysticInfoModal from '../components/MysticInfoModal'; // <-- YENİ MODALI EKLEDİK
+import MysticInfoModal from '../components/MysticInfoModal';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { BottomTabNavigationProp } from '@react-navigation/bottom-tabs';
 import { RootStackParamList, TabParamList } from '../types/navigation';
+import { useTranslation } from 'react-i18next';
 
-interface UserPreferences {
-  notifications: boolean;
-  dailyReminder: boolean;
-  autoSave: boolean;
-}
+interface UserPreferences { notifications: boolean; dailyReminder: boolean; autoSave: boolean; }
 
 const CustomToggle = ({ value, onValueChange }: { value: boolean, onValueChange: () => void }) => {
   const animatedValue = useRef(new Animated.Value(value ? 1 : 0)).current;
@@ -44,220 +30,116 @@ const CustomToggle = ({ value, onValueChange }: { value: boolean, onValueChange:
   );
 };
 
-type ProfileScreenNavigationProp = CompositeNavigationProp<
-  BottomTabNavigationProp<TabParamList, 'Profil'>,
-  NativeStackNavigationProp<RootStackParamList>
->;
+type ProfileScreenNavigationProp = CompositeNavigationProp<BottomTabNavigationProp<TabParamList, 'Profil'>, NativeStackNavigationProp<RootStackParamList>>;
 
 const ProfileScreen: React.FC = () => {
   const navigation = useNavigation<ProfileScreenNavigationProp>();
+  const { t, i18n } = useTranslation();
   const [user, setUser] = useState<User | null>(auth.currentUser);
   const [userStats, setUserStats] = useState<any>(null);
-  const [preferences, setPreferences] = useState<UserPreferences>({
-    notifications: true,
-    dailyReminder: true,
-    autoSave: true,
-  });
+  const [preferences, setPreferences] = useState<UserPreferences>({ notifications: true, dailyReminder: true, autoSave: true });
   
-  // MODAL STATE YÖNETİMİ
-  const [modalType, setModalType] = useState<'none' | 'delete' | 'about' | 'privacy'>('none');
+  // Modal State Yönetimi
+  const [modalType, setModalType] = useState<'none' | 'delete' | 'about' | 'privacy' | 'language'>('none');
 
-  useEffect(() => {
-    const unsubscribe = onAuthStateChanged(auth, (currentUser) => {
-      setUser(currentUser);
-    });
-    return () => unsubscribe();
-  }, []);
+  useEffect(() => { const unsubscribe = onAuthStateChanged(auth, (currentUser) => { setUser(currentUser); }); return () => unsubscribe(); }, []);
+  useFocusEffect(useCallback(() => { loadUserData(); loadPreferences(); }, []));
 
-  useFocusEffect(
-    useCallback(() => {
-      loadUserData();
-      loadPreferences();
-    }, [])
-  );
+  const loadUserData = async () => { const stats = await getUserStats(); setUserStats(stats); };
+  const loadPreferences = async () => { const savedPrefs = await AsyncStorage.getItem('@user_preferences'); if (savedPrefs) setPreferences(JSON.parse(savedPrefs)); };
+  const savePreferences = async (newPrefs: UserPreferences) => { await AsyncStorage.setItem('@user_preferences', JSON.stringify(newPrefs)); setPreferences(newPrefs); };
+  const handlePreferenceChange = (key: keyof UserPreferences) => { const newPrefs = { ...preferences, [key]: !preferences[key] }; savePreferences(newPrefs); };
+  
+  const confirmClearHistory = async () => { try { await clearAllHistory(); await loadUserData(); setModalType('none'); } catch (error) { setModalType('none'); } };
+  const handleSignOut = async () => { try { await signOut(auth); } catch (error) { console.error("Çıkış hatası:", error); } };
+  const openSocialMedia = async (url: string) => { const supported = await Linking.canOpenURL(url); if (supported) await Linking.openURL(url); };
 
-  const loadUserData = async () => {
-    const stats = await getUserStats();
-    setUserStats(stats);
-  };
-  const loadPreferences = async () => {
-    const savedPrefs = await AsyncStorage.getItem('@user_preferences');
-    if (savedPrefs) setPreferences(JSON.parse(savedPrefs));
-  };
-  const savePreferences = async (newPrefs: UserPreferences) => {
-    await AsyncStorage.setItem('@user_preferences', JSON.stringify(newPrefs));
-    setPreferences(newPrefs);
-  };
-  const handlePreferenceChange = (key: keyof UserPreferences) => {
-    const newPrefs = { ...preferences, [key]: !preferences[key] };
-    savePreferences(newPrefs);
-  };
-  const confirmClearHistory = async () => {
-    try {
-      await clearAllHistory();
-      await loadUserData();
-      setModalType('none'); // Modalı kapat
-    } catch (error) {
-      setModalType('none');
-      Alert.alert('Hata', 'Geçmiş silinemedi.');
-    }
-  };
-  const handleSignOut = async () => {
-    try {
-      await signOut(auth);
-    } catch (error) {
-      console.error("Çıkış yaparken hata:", error);
-    }
-  };
-
-  const openSocialMedia = async (url: string) => {
-    const supported = await Linking.canOpenURL(url);
-    if (supported) {
-      await Linking.openURL(url);
-    }
+  const changeLanguage = async (lang: string) => {
+    await AsyncStorage.setItem('user-language', lang);
+    i18n.changeLanguage(lang);
+    setModalType('none');
   };
   
   const userLevel = Math.floor((userStats?.totalReadings || 0) / 10) + 1;
-
-  // --- İÇERİK METİNLERİ (Burada düzenleyebilirsin) ---
-  const aboutText = `TarotNova, kadim tarot bilgeliğini modern yapay zeka teknolojisiyle buluşturan yeni nesil bir rehberlik uygulamasıdır.
-
-Amacımız, içinizdeki ışığı keşfetmenize ve hayat yolculuğunuzda size mistik bir pusula olmaya yardımcı olmaktır.
-
-Kartların gizemli dili, Nova'nın derin analiz yeteneğiyle birleşerek size özel, samimi ve farkındalık yaratan yorumlar sunar.
-
-Sürüm: 1.0.0`;
-  
-  const privacyText = `Son Güncelleme: 28 Kasım 2025
-
-Verileriniz bizim için kutsaldır.
-
-1. Toplanan Bilgiler
-Hesap oluştururken paylaştığınız temel bilgiler ve uygulama içi okuma geçmişiniz size özel bir deneyim sunmak için saklanır.
-
-2. Veri Güvenliği
-Verileriniz Google Firebase altyapısında, endüstri standardı şifreleme yöntemleriyle korunmaktadır.
-
-3. Üçüncü Taraflar
-Kişisel bilgileriniz izniniz olmadan asla satılmaz veya paylaşılmaz.
-
-4. Kontrol Sizde
-Hesabınızı ve tüm verilerinizi dilediğiniz zaman "Tüm Verileri Sil" seçeneği ile kalıcı olarak silebilirsiniz.`;
 
   return (
     <>
       <LinearGradient colors={['#2b173f', '#1d112b', '#2b173f']} style={styles.container}>
         <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={styles.contentContainer}>
-          
           <View style={styles.journeyPeakContainer}>
             <View style={styles.avatarFrame}><LinearGradient colors={['#d4af37', '#F59E0B']} style={styles.avatarGradient}><Text style={styles.avatarSymbol}>✧</Text></LinearGradient></View>
-            <Text style={styles.userName}>{user ? 'Mistik Gezgin' : 'Misafir Kullanıcı'}</Text>
-            {user ? <Text style={styles.userEmail}>{user.email}</Text> : <Text style={styles.userLevel}>Seviye {userLevel}</Text>}
+            <Text style={styles.userName}>{user ? t('profile.traveler') : t('profile.guest')}</Text>
+            {user ? <Text style={styles.userEmail}>{user.email}</Text> : <Text style={styles.userLevel}>{t('profile.level')} {userLevel}</Text>}
           </View>
 
           {!user && (
             <TouchableOpacity style={styles.authCard} activeOpacity={0.8} onPress={() => navigation.navigate('Auth')}>
                 <LinearGradient colors={['rgba(212, 175, 55, 0.1)', 'rgba(212, 175, 55, 0.2)']} style={styles.authGradient}>
                     <Text style={styles.authCardIcon}>✧</Text>
-                    <View style={styles.authCardTextContainer}>
-                        <Text style={styles.authCardTitle}>Yolculuğunu Güvenceye Al</Text>
-                        <Text style={styles.authCardSubtitle}>Okumalarını kaydetmek ve her yerden erişmek için giriş yap.</Text>
-                    </View>
+                    <View style={styles.authCardTextContainer}><Text style={styles.authCardTitle}>{t('profile.loginCard.title')}</Text><Text style={styles.authCardSubtitle}>{t('profile.loginCard.subtitle')}</Text></View>
                     <Text style={styles.ritualArrow}>›</Text>
                 </LinearGradient>
             </TouchableOpacity>
           )}
           
-          <View style={styles.section}><Text style={styles.sectionTitle}>İstatistiklerim</Text><View style={styles.journeyStonesContainer}><View style={styles.journeyStone}><Text style={styles.stoneSymbol}>✦</Text><Text style={styles.stoneValue}>{userStats?.totalReadings || 0}</Text><Text style={styles.stoneLabel}>Okuma</Text></View><View style={styles.journeyStone}><Text style={styles.stoneSymbol}>★</Text><Text style={styles.stoneValue}>{userStats?.favoriteReadings || 0}</Text><Text style={styles.stoneLabel}>Favori</Text></View><View style={styles.journeyStone}><Text style={styles.stoneSymbol}>☍</Text><Text style={styles.stoneValue}>{userStats?.streakDays || 0} gün</Text><Text style={styles.stoneLabel}>Seri</Text></View></View></View>
+          <View style={styles.section}><Text style={styles.sectionTitle}>{t('profile.stats.title')}</Text><View style={styles.journeyStonesContainer}><View style={styles.journeyStone}><Text style={styles.stoneSymbol}>✦</Text><Text style={styles.stoneValue}>{userStats?.totalReadings || 0}</Text><Text style={styles.stoneLabel}>{t('profile.stats.readings')}</Text></View><View style={styles.journeyStone}><Text style={styles.stoneSymbol}>★</Text><Text style={styles.stoneValue}>{userStats?.favoriteReadings || 0}</Text><Text style={styles.stoneLabel}>{t('profile.stats.favorites')}</Text></View><View style={styles.journeyStone}><Text style={styles.stoneSymbol}>☍</Text><Text style={styles.stoneValue}>{userStats?.streakDays || 0} {t('profile.stats.days')}</Text><Text style={styles.stoneLabel}>{t('profile.stats.streak')}</Text></View></View></View>
           
-          <View style={styles.section}><Text style={styles.sectionTitle}>Tercihler</Text><View style={styles.ritualContainer}><View style={styles.ritualRow}><View style={styles.ritualInfo}><Text style={styles.ritualSymbol}>◎</Text><View style={styles.ritualTextContainer}><Text style={styles.ritualLabel}>Bildirimler</Text><Text style={styles.ritualDescription}>Nova'dan gelen fısıltıları ve yenilikleri al</Text></View></View><View style={styles.toggleContainer}><CustomToggle value={preferences.notifications} onValueChange={() => handlePreferenceChange('notifications')} /></View></View><View style={styles.ritualRow}><View style={styles.ritualInfo}><Text style={styles.ritualSymbol}>☾</Text><View style={styles.ritualTextContainer}><Text style={styles.ritualLabel}>Günlük Hatırlatıcı</Text><Text style={styles.ritualDescription}>Günün rehberliğini almak için nazik bir anımsatıcı</Text></View></View><View style={styles.toggleContainer}><CustomToggle value={preferences.dailyReminder} onValueChange={() => handlePreferenceChange('dailyReminder')} /></View></View><View style={[styles.ritualRow, { borderBottomWidth: 0 }]}><View style={styles.ritualInfo}><Text style={styles.ritualSymbol}>⊕</Text><View style={styles.ritualTextContainer}><Text style={styles.ritualLabel}>Otomatik Kayıt</Text><Text style={styles.ritualDescription}>Yolculuğunun hiçbir anının kaybolmamasını sağla</Text></View></View><View style={styles.toggleContainer}><CustomToggle value={preferences.autoSave} onValueChange={() => handlePreferenceChange('autoSave')} /></View></View></View></View>
+          <View style={styles.section}><Text style={styles.sectionTitle}>{t('profile.preferences.title')}</Text><View style={styles.ritualContainer}>
+            <View style={styles.ritualRow}><View style={styles.ritualInfo}><Text style={styles.ritualSymbol}>◎</Text><View style={styles.ritualTextContainer}><Text style={styles.ritualLabel}>{t('profile.preferences.notifications')}</Text><Text style={styles.ritualDescription}>{t('profile.preferences.notificationsDesc')}</Text></View></View><View style={styles.toggleContainer}><CustomToggle value={preferences.notifications} onValueChange={() => handlePreferenceChange('notifications')} /></View></View>
+            <View style={styles.ritualRow}><View style={styles.ritualInfo}><Text style={styles.ritualSymbol}>☾</Text><View style={styles.ritualTextContainer}><Text style={styles.ritualLabel}>{t('profile.preferences.reminder')}</Text><Text style={styles.ritualDescription}>{t('profile.preferences.reminderDesc')}</Text></View></View><View style={styles.toggleContainer}><CustomToggle value={preferences.dailyReminder} onValueChange={() => handlePreferenceChange('dailyReminder')} /></View></View>
+            <View style={styles.ritualRow}><View style={styles.ritualInfo}><Text style={styles.ritualSymbol}>⊕</Text><View style={styles.ritualTextContainer}><Text style={styles.ritualLabel}>{t('profile.preferences.autoSave')}</Text><Text style={styles.ritualDescription}>{t('profile.preferences.autoSaveDesc')}</Text></View></View><View style={styles.toggleContainer}><CustomToggle value={preferences.autoSave} onValueChange={() => handlePreferenceChange('autoSave')} /></View></View>
+            
+            {/* DİL DEĞİŞTİRME BUTONU - Omega İkonu ile */}
+            <TouchableOpacity style={[styles.accountRow, { borderBottomWidth: 0 }]} activeOpacity={0.7} onPress={() => setModalType('language')}>
+                <View style={styles.ritualInfo}>
+                    <Text style={styles.ritualSymbol}>Ω</Text> 
+                    <View style={styles.ritualTextContainer}><Text style={styles.ritualLabel}>{t('profile.preferences.language')}</Text><Text style={styles.ritualDescription}>{t('profile.preferences.languageDesc')}</Text></View>
+                </View>
+                <Text style={{color: '#d4af37', marginRight: 10, fontWeight: 'bold'}}>{i18n.language.toUpperCase()}</Text>
+                <Text style={styles.ritualArrow}>›</Text>
+            </TouchableOpacity>
+          </View></View>
           
-          <View style={styles.section}>
-            <Text style={styles.sectionTitle}>Hesap</Text>
-            <View style={styles.ritualContainer}>
-                {/* Hakkında - YENİ MODALI TETİKLER */}
-                <TouchableOpacity style={styles.accountRow} activeOpacity={0.7} onPress={() => setModalType('about')}>
-                    <View style={styles.ritualInfo}>
-                        <Text style={styles.ritualSymbol}>i</Text>
-                        <Text style={styles.ritualLabel}>Hakkında</Text>
-                    </View>
-                    <Text style={styles.ritualArrow}>›</Text>
-                </TouchableOpacity>
-
-                {/* Gizlilik Politikası - YENİ MODALI TETİKLER */}
-                <TouchableOpacity style={styles.accountRow} activeOpacity={0.7} onPress={() => setModalType('privacy')}>
-                    <View style={styles.ritualInfo}>
-                        <Text style={styles.ritualSymbol}>☗</Text>
-                        <Text style={styles.ritualLabel}>Gizlilik Politikası</Text>
-                    </View>
-                    <Text style={styles.ritualArrow}>›</Text>
-                </TouchableOpacity>
-
-                {/* Çıkış Yap */}
-                {user && (
-                    <TouchableOpacity style={styles.accountRow} activeOpacity={0.7} onPress={handleSignOut}>
-                        <View style={styles.ritualInfo}>
-                            <Text style={styles.ritualSymbol}>➜</Text>
-                            <Text style={styles.ritualLabel}>Çıkış Yap</Text>
-                        </View>
-                    </TouchableOpacity>
-                )}
-
-                {/* Verileri Sil - ONAY MODALINI TETİKLER */}
-                <TouchableOpacity style={[styles.accountRow, { borderBottomWidth: 0 }]} activeOpacity={0.7} onPress={() => setModalType('delete')}>
-                    <View style={styles.ritualInfo}>
-                        <Text style={[styles.ritualSymbol, {color: '#EF4444'}]}>✕</Text>
-                        <Text style={[styles.ritualLabel, {color: '#EF4444'}]}>Tüm Verileri Sil</Text>
-                    </View>
-                    <Text style={styles.ritualArrow}>›</Text>
-                </TouchableOpacity>
-            </View>
-          </View>
+          <View style={styles.section}><Text style={styles.sectionTitle}>{t('profile.account.title')}</Text><View style={styles.ritualContainer}>
+                <TouchableOpacity style={styles.accountRow} activeOpacity={0.7} onPress={() => setModalType('about')}><View style={styles.ritualInfo}><Text style={styles.ritualSymbol}>i</Text><Text style={styles.ritualLabel}>{t('profile.account.about')}</Text></View><Text style={styles.ritualArrow}>›</Text></TouchableOpacity>
+                <TouchableOpacity style={styles.accountRow} activeOpacity={0.7} onPress={() => setModalType('privacy')}><View style={styles.ritualInfo}><Text style={styles.ritualSymbol}>☗</Text><Text style={styles.ritualLabel}>{t('profile.account.privacy')}</Text></View><Text style={styles.ritualArrow}>›</Text></TouchableOpacity>
+                {user && (<TouchableOpacity style={styles.accountRow} activeOpacity={0.7} onPress={handleSignOut}><View style={styles.ritualInfo}><Text style={styles.ritualSymbol}>➜</Text><Text style={styles.ritualLabel}>{t('profile.account.logout')}</Text></View></TouchableOpacity>)}
+                <TouchableOpacity style={[styles.accountRow, { borderBottomWidth: 0 }]} activeOpacity={0.7} onPress={() => setModalType('delete')}><View style={styles.ritualInfo}><Text style={[styles.ritualSymbol, {color: '#EF4444'}]}>✕</Text><Text style={[styles.ritualLabel, {color: '#EF4444'}]}>{t('profile.account.deleteData')}</Text></View><Text style={styles.ritualArrow}>›</Text></TouchableOpacity>
+          </View></View>
           
-          <TouchableOpacity style={styles.premiumCard} activeOpacity={0.8}><LinearGradient colors={['#d4af37', '#F59E0B']} style={styles.premiumGradient}><View><Text style={styles.premiumTitle}>Premium'a Geç</Text><Text style={styles.premiumDescription}>Sınırsız okuma ve özel açılımlar</Text></View><Text style={styles.premiumLabel}>Yakında</Text></LinearGradient></TouchableOpacity>
+          <TouchableOpacity style={styles.premiumCard} activeOpacity={0.8} onPress={() => navigation.navigate('Premium' as any)}>
+            <LinearGradient colors={['#d4af37', '#F59E0B']} style={styles.premiumGradient}>
+                <View><Text style={styles.premiumTitle}>{t('profile.premiumCard.title')}</Text><Text style={styles.premiumDescription}>{t('profile.premiumCard.desc')}</Text></View><Text style={styles.premiumLabel}>{t('profile.premiumCard.badge')}</Text>
+            </LinearGradient>
+          </TouchableOpacity>
         </ScrollView>
       </LinearGradient>
 
       {/* --- MODALLAR --- */}
-
-      {/* 1. Verileri Silme Onayı (Eski MysticConfirmationModal) */}
       <MysticConfirmationModal 
         visible={modalType === 'delete'} 
         onClose={() => setModalType('none')} 
-        title="Verileri Sil" 
-        subtitle="Tüm okuma geçmişiniz ve favorileriniz kalıcı olarak silinecek. Bu işlem geri alınamaz." 
-        buttons={[
-            { text: 'İptal', onPress: () => setModalType('none'), style: 'default' },
-            { text: 'Sil', onPress: confirmClearHistory, style: 'destructive' }
-        ]}
+        title={t('profile.account.deleteData')} 
+        subtitle={t('history.deleteModal.message')} 
+        buttons={[{ text: t('common.cancel'), onPress: () => setModalType('none'), style: 'default' }, { text: t('common.delete'), onPress: confirmClearHistory, style: 'destructive' }]}
       />
 
-      {/* 2. Hakkında Modalı (YENİ MysticInfoModal) */}
+      {/* DİL SEÇİM MODALI - MysticInfoModal Kullanılarak */}
       <MysticInfoModal
-        visible={modalType === 'about'}
+        visible={modalType === 'language'}
         onClose={() => setModalType('none')}
-        title="TarotNova Hakkında"
-        icon="✧"
-        content={aboutText}
+        title={t('profile.preferences.language')}
+        icon="Ω"
+        content="" // İçerik boş, sadece butonlar var
         buttons={[
-            { text: 'Instagram', onPress: () => openSocialMedia('https://www.instagram.com/tarotnova777'), variant: 'primary' },
-            { text: 'TikTok', onPress: () => openSocialMedia('https://www.tiktok.com/@tarotnova777'), variant: 'secondary' },
-            { text: 'Kapat', onPress: () => setModalType('none'), variant: 'secondary' }
+            { text: 'Türkçe 🇹🇷', onPress: () => changeLanguage('tr'), variant: 'primary' },
+            { text: 'English 🇬🇧', onPress: () => changeLanguage('en'), variant: 'primary' },
+            { text: t('common.cancel'), onPress: () => setModalType('none'), variant: 'secondary' }
         ]}
       />
 
-      {/* 3. Gizlilik Politikası Modalı (YENİ MysticInfoModal) */}
-      <MysticInfoModal
-        visible={modalType === 'privacy'}
-        onClose={() => setModalType('none')}
-        title="Gizlilik Politikası"
-        icon="🔒"
-        content={privacyText}
-        buttons={[
-            { text: 'Tamam', onPress: () => setModalType('none'), variant: 'primary' }
-        ]}
-      />
-
+      <MysticInfoModal visible={modalType === 'about'} onClose={() => setModalType('none')} title={t('legal.aboutTitle')} icon="✧" content={t('legal.aboutContent')} buttons={[{ text: 'Instagram', onPress: () => openSocialMedia('https://www.instagram.com/tarotnova777'), variant: 'primary' }, { text: 'TikTok', onPress: () => openSocialMedia('https://www.tiktok.com/@tarotnova777'), variant: 'secondary' }, { text: t('common.close'), onPress: () => setModalType('none'), variant: 'secondary' }]} />
+      <MysticInfoModal visible={modalType === 'privacy'} onClose={() => setModalType('none')} title={t('legal.privacyTitle')} icon="🔒" content={t('legal.privacyContent')} buttons={[{ text: t('common.ok'), onPress: () => setModalType('none'), variant: 'primary' }]} />
     </>
   );
 };
@@ -288,7 +170,7 @@ const styles = StyleSheet.create({
     ritualContainer: { backgroundColor: 'rgba(74, 4, 78, 0.2)', borderRadius: 16, borderWidth: 1, borderColor: '#701a75' },
     ritualRow: { flexDirection: 'row', justifyContent: 'space-between', paddingHorizontal: 16, borderBottomWidth: 1, borderBottomColor: 'rgba(112, 26, 117, 0.3)', position: 'relative', minHeight: 70, alignItems: 'center' },
     accountRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingVertical: 18, paddingHorizontal: 16, borderBottomWidth: 1, borderBottomColor: 'rgba(112, 26, 117, 0.3)'},
-    ritualInfo: { flexDirection: 'row', alignItems: 'flex-start', flex: 1, paddingVertical: 18, marginRight: 60 },
+    ritualInfo: { flexDirection: 'row', alignItems: 'flex-start', flex: 1, paddingVertical: 18, marginRight: 20 },
     ritualTextContainer: { flex: 1 },
     ritualSymbol: { fontSize: 22, color: '#d4af37', width: 24, textAlign: 'center', marginRight: 16, fontFamily: Platform.select({ ios: 'Georgia', android: 'serif' }) },
     ritualLabel: { fontSize: 16, fontWeight: '600', color: '#f3e8ff', fontFamily: Platform.select({ ios: 'Georgia', android: 'serif' }) },

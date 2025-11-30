@@ -1,0 +1,235 @@
+{
+  "common": {
+    "welcome": "Welcome",
+    "loading": "Loading...",
+    "error": "Error",
+    "success": "Success",
+    "cancel": "Cancel",
+    "save": "Save",
+    "saved": "Saved",
+    "delete": "Delete",
+    "close": "Close",
+    "ok": "OK",
+    "continue": "Continue",
+    "back": "Back"
+  },
+  "tab": {
+    "home": "Home",
+    "history": "History",
+    "favorites": "Favorites",
+    "profile": "Profile"
+  },
+  "home": {
+    "dailyCard": "Card of the Day",
+    "askNova": "Ask Nova",
+    "askPlaceholder": "Type your question for Nova...",
+    "moodLabel": "Select your mood",
+    "moods": {
+      "happy": "Happy",
+      "neutral": "Neutral",
+      "sad": "Anxious",
+      "hopeful": "Hopeful",
+      "tired": "Tired",
+      "calm": "Calm",
+      "curious": "Curious",
+      "excited": "Excited"
+    },
+    "interpretBtn": "Interpret with Nova",
+    "analyzing": "Starting Nova..."
+  },
+  "profile": {
+    "guest": "Guest User",
+    "traveler": "Mystic Traveler",
+    "level": "Level",
+    "loginCard": {
+      "title": "Secure Your Journey",
+      "subtitle": "Log in to save your readings and access them anywhere."
+    },
+    "stats": {
+      "title": "My Stats",
+      "readings": "Readings",
+      "favorites": "Favorites",
+      "streak": "Streak",
+      "days": "days"
+    },
+    "preferences": {
+      "title": "Preferences",
+      "notifications": "Notifications",
+      "notificationsDesc": "Receive whispers and updates from Nova",
+      "reminder": "Daily Reminder",
+      "reminderDesc": "A gentle reminder to get your daily guidance",
+      "autoSave": "Auto Save",
+      "autoSaveDesc": "Ensure no moment of your journey is lost",
+      "language": "Language",
+      "languageDesc": "Change app and interpretation language"
+    },
+    "account": {
+      "title": "Account",
+      "about": "About",
+      "privacy": "Privacy Policy",
+      "logout": "Log Out",
+      "deleteData": "Delete All Data"
+    },
+    "premiumCard": {
+      "title": "Go Premium",
+      "desc": "Unlimited readings and special spreads",
+      "badge": "Offer"
+    }
+  },
+  "spread": {
+    "title": "Spread Selection",
+    "categories": {
+      "general": "General",
+      "love": "Love",
+      "career": "Career",
+      "spiritual": "Spiritual",
+      "decision": "Decision",
+      "timing": "Timing"
+    },
+    "categoryDescriptions": {
+      "general": "General life flow and daily questions",
+      "love": "Relationships and emotional bonds",
+      "career": "Work life and financial situations",
+      "spiritual": "Inner journey and awareness",
+      "decision": "Decision making moments",
+      "timing": "Time-focused predictions"
+    },
+    "types": {
+      "single-card": { "name": "Single Card", "description": "Quick guidance or a specific answer." },
+      "past-present-future": { "name": "Past - Present - Future", "description": "Analysis of the situation over time." },
+      "yes-no": { "name": "Yes / No", "description": "A clear answer to a clear question." },
+      "celtic-cross": { "name": "Celtic Cross", "description": "Comprehensive and detailed analysis." },
+      "relationship-check": { "name": "Relationship Checkup", "description": "Health status of your current relationship." },
+      "love-cross": { "name": "Love Cross", "description": "In-depth analysis of your relationship." },
+      "soulmate": { "name": "Soulmate", "description": "Journey to find your soulmate." },
+      "work-situation": { "name": "Work Situation", "description": "Analysis of your current job situation." },
+      "career-path": { "name": "Career Path", "description": "Guidance for your career development." },
+      "financial": { "name": "Financial Status", "description": "Financial situation and money flow." },
+      "spiritual-growth": { "name": "Spiritual Growth", "description": "Guidance on your spiritual journey." },
+      "chakra": { "name": "Chakra Spread", "description": "Energy status of your 7 chakras." },
+      "moon-phases": { "name": "Moon Phases", "description": "Guidance aligned with the moon cycle." },
+      "pros-cons": { "name": "Pros & Cons", "description": "Advantages and disadvantages of a decision." },
+      "decision-making": { "name": "Decision Making", "description": "Analysis for important decisions." },
+      "two-paths": { "name": "Two Paths", "description": "Choosing between two options." },
+      "weekly": { "name": "Weekly", "description": "Daily guidance for this week." },
+      "monthly": { "name": "Monthly", "description": "What awaits you throughout the month." },
+      "yearly": { "name": "Yearly", "description": "Monthly guidance for the whole year." }
+    },
+    "cardsCount": "{{count}} Cards",
+    "positions": "Positions",
+    "locked": "Unlock to use this special spread ✨",
+    "premiumAlert": {
+      "title": "Premium Feature 🌟",
+      "message": "The \"{{spreadName}}\" spread is for Premium members only.\n\nUpgrade to Premium for unlimited access and deep analysis.",
+      "examine": "View"
+    }
+  },
+  "cardSelection": {
+    "title": "Select Your Cards",
+    "selected": "cards selected",
+    "button": "Interpret Cards"
+  },
+  "reading": {
+    "title": "Nova Interpretation",
+    "yourQuestion": "Your Question:",
+    "selectedCards": "Selected Cards:",
+    "generalInterpretation": "General Interpretation",
+    "cardAnalysis": "Card Analysis",
+    "summary": "Summary",
+    "readMore": "Read More",
+    "meaning": "Meaning",
+    "advice": "Advice",
+    "newReading": "New Reading",
+    "modalSaved": {
+      "title": "Saved",
+      "subtitle": "This reading is now shining in your history."
+    }
+  },
+  "history": {
+    "title": "Reading History",
+    "empty": {
+      "title": "No reading history yet",
+      "subtitle": "Do your first tarot reading and view it here",
+      "btn": "Do My First Reading"
+    },
+    "filters": {
+      "all": "All",
+      "week": "This Week",
+      "month": "This Month"
+    },
+    "deleteModal": {
+      "title": "Send to Eternity",
+      "message": "Sending this reading to eternity cannot be undone. Continue?"
+    }
+  },
+  "favorites": {
+    "title": "Favorites",
+    "empty": {
+      "title": "No favorite readings yet",
+      "subtitle": "Add readings you like to favorites to access them easily here"
+    },
+    "removeModal": {
+      "title": "Remove from Favorites",
+      "message": "Are you sure you want to remove this special memory from your favorites?",
+      "btn": "Remove"
+    }
+  },
+  "auth": {
+    "login": "Log In",
+    "register": "Sign Up",
+    "createAccount": "Create Account",
+    "email": "Email Address",
+    "password": "Password",
+    "or": "or",
+    "googleBtn": "Continue with Google",
+    "noAccount": "Don't have an account?",
+    "hasAccount": "Already have an account?"
+  },
+  "premium": {
+    "title": "TarotNova Premium",
+    "subtitle": "Unleash your unlimited potential.",
+    "features": {
+      "f1": "Unlock All Special Spreads",
+      "d1": "Celtic Cross, Love Analysis and more",
+      "f2": "Unlimited Daily Readings",
+      "d2": "Query your energy as much as you want",
+      "f3": "Deep AI Analysis",
+      "d3": "More comprehensive and detailed interpretations",
+      "f4": "Ad-Free Experience",
+      "d4": "Focus only on you and your cards"
+    },
+    "btn": "Get Premium",
+    "price": "₺50.00 / Month",
+    "notNow": "Not Now"
+  },
+  "legal": {
+    "aboutTitle": "About TarotNova",
+    "aboutContent": "TarotNova is a next-generation guidance app combining ancient tarot wisdom with modern AI technology.\n\nVersion: 1.0.0",
+    "privacyTitle": "Privacy Policy",
+    "privacyContent": "Your data is securely stored on Google Firebase infrastructure.\n\n- Your personal information is never shared with 3rd parties.\n- Google Gemini AI technology is used for tarot interpretations.\n- You can delete your account and data at any time."
+  },
+  "cardMessages": {
+    "The Fool": "Step fearlessly into new beginnings today.",
+    "The Magician": "It is time to use your inner power and skills.",
+    "The High Priestess": "Trust your intuition, answers are hidden within.",
+    "The Empress": "Nurture your creativity and compassion.",
+    "The Emperor": "Bring order and stability to your life.",
+    "The Hierophant": "Learn from traditions and wisdom.",
+    "The Lovers": "Listen to your heart and make important choices.",
+    "The Chariot": "Move towards your goals using your willpower.",
+    "Strength": "Embrace your courage and inner strength.",
+    "The Hermit": "Turn inward and seek wisdom.",
+    "Wheel of Fortune": "Accept the inevitable cycle of change.",
+    "Justice": "Find balance and make fair decisions.",
+    "The Hanged Man": "Pause and reflect to gain a different perspective.",
+    "Death": "Let go of the old, be ready for a great transformation.",
+    "Temperance": "Put harmony and balance at the center of your life.",
+    "The Devil": "Recognize and break the chains that limit you.",
+    "The Tower": "Sudden changes are opportunities to build a new foundation.",
+    "The Star": "Do not lose your hope and inspiration.",
+    "The Moon": "Believe in the guidance of your subconscious and dreams.",
+    "The Sun": "Embrace joy, success, and light.",
+    "Judgement": "Evaluate the past and experience rebirth.",
+    "The World": "Enjoy successfully completing a cycle."
+  }
+}

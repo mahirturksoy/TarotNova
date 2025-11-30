@@ -17,12 +17,12 @@ import { LinearGradient } from 'expo-linear-gradient';
 import { useNavigation, CompositeNavigationProp } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { BottomTabNavigationProp } from '@react-navigation/bottom-tabs';
+import { useTranslation } from 'react-i18next'; // <-- ÇEVİRİ
 
 import { useReadingContext } from '../context/ReadingContext';
 import { RootStackParamList, TabParamList } from '../types/navigation';
 import { MAJOR_ARCANA, getCardImage } from '../constants/tarotDeck';
 
-// DEĞİŞİKLİK: Navigasyon tipi hatayı giderecek şekilde güncellendi
 type HomeScreenNavigationProp = CompositeNavigationProp<
   BottomTabNavigationProp<TabParamList, 'Ana Sayfa'>,
   NativeStackNavigationProp<RootStackParamList>
@@ -31,6 +31,7 @@ type HomeScreenNavigationProp = CompositeNavigationProp<
 const HomeScreen: React.FC = () => {
   const navigation = useNavigation<HomeScreenNavigationProp>();
   const { isLoading } = useReadingContext();
+  const { t } = useTranslation(); // <-- Hook
   
   const [question, setQuestion] = useState('');
   const [selectedMood, setSelectedMood] = useState<string | null>(null);
@@ -42,11 +43,11 @@ const HomeScreen: React.FC = () => {
   }, []);
 
   const moods = [
-    { id: 'Heyecanlı', label: 'Heyecanlı' },
-    { id: 'Sakin', label: 'Sakin' },
-    { id: 'Meraklı', label: 'Meraklı' },
-    { id: 'Yorgun', label: 'Yorgun' },
-    { id: 'Umutlu', label: 'Umutlu' },
+    { id: 'Heyecanlı', label: t('home.moods.excited') },
+    { id: 'Sakin', label: t('home.moods.calm') },
+    { id: 'Meraklı', label: t('home.moods.curious') },
+    { id: 'Yorgun', label: t('home.moods.tired') },
+    { id: 'Umutlu', label: t('home.moods.hopeful') },
   ];
 
   const handleSubmit = () => {
@@ -54,7 +55,7 @@ const HomeScreen: React.FC = () => {
       Keyboard.dismiss();
       navigation.navigate('SpreadSelection', { 
         question: question.trim(), 
-        mood: selectedMood 
+        mood: selectedMood
       });
     }
   };
@@ -62,11 +63,10 @@ const HomeScreen: React.FC = () => {
   const isButtonDisabled = !question.trim() || !selectedMood || isLoading;
   const cardImage = getCardImage(cardOfTheDay.imageName);
   
+  // DÜZELTME: Kart mesajını çeviri dosyasından (JSON) çekiyoruz.
   const getCardMessage = (cardName: string) => {
-    const messages: { [key: string]: string } = {
-      'The Fool': "Bugün yeni başlangıçlara korkusuzca adım at.",'The Magician': "İçindeki gücü ve yeteneklerini kullanma zamanı.",'The High Priestess': "Sezgilerine güven, cevaplar içinde saklı.",'The Empress': "Yaratıcılığını ve şefkatini besle.",'The Emperor': "Hayatına düzen ve istikrar getir.",'The Hierophant': "Geleneklerden ve bilgelerden öğren.",'The Lovers': "Kalbinin sesini dinle ve önemli seçimler yap.",'The Chariot': "İradeni kullanarak hedeflerine doğru ilerle.",'Strength': "Cesaretini ve içsel gücünü kucakla.",'The Hermit': "Kendi içine dönüp bilgeliği ara.",'Wheel of Fortune': "Değişimin kaçınılmaz döngüsünü kabul et.",'Justice': "Dengeyi bul ve adil kararlar ver.",'The Hanged Man': "Farklı bir bakış açısı kazanmak için dur ve düşün.",'Death': "Eskiyi bırak, büyük bir dönüşüme hazır ol.",'Temperance': "Uyum ve dengeyi hayatının merkezine al.",'The Devil': "Seni sınırlayan zincirleri fark et ve kır.",'The Tower': "Ani değişimler, yeni bir temel kurman için fırsattır.",'The Star': "Umutlarını ve ilhamını kaybetme.",'The Moon': "Bilinçaltının ve rüyalarının rehberliğine inan.",'The Sun': "Neşeyi, başarıyı ve aydınlığı kucakla.",'Judgement': "Geçmişi değerlendir ve yeniden doğuşu yaşa.",'The World': "Bir döngüyü başarıyla tamamlamanın keyfini çıkar."
-    };
-    return messages[cardName] || "Günün sana özel bir mesajı var.";
+    // Örn: 'cardMessages.The Fool' anahtarını arar
+    return t(`cardMessages.${cardName}`);
   };
 
   return (
@@ -88,21 +88,58 @@ const HomeScreen: React.FC = () => {
           </View>
           <View style={styles.mainContent}>
             <View style={styles.cardOfTheDayContainer}>
-              <Text style={styles.sectionTitle}>Günün Kartı</Text>
+              <Text style={styles.sectionTitle}>{t('home.dailyCard')}</Text>
               <View style={styles.cardImageContainer}>
                 {cardImage && <Image source={cardImage} style={styles.cardImage} />}
               </View>
               <Text style={styles.cardName}>{cardOfTheDay.name}</Text>
-              {/* DEĞİŞİKLİK: Hatalı 'cardName' değişkeni 'cardOfTheDay.name' ile düzeltildi */}
+              {/* Dinamik Mesaj */}
               <Text style={styles.cardMessage}>"{getCardMessage(cardOfTheDay.name)}"</Text>
             </View>
             <LinearGradient 
               colors={['rgba(74, 4, 78, 0.2)', 'rgba(74, 4, 78, 0.3)']}
               style={styles.queryContainer}
             >
-              <View style={styles.section}><Text style={styles.stepTitle}>Nova'ya Sor</Text><View style={styles.inputContainer}><TextInput style={styles.input} placeholder="Aklındaki soruya odaklan..." placeholderTextColor="rgba(243, 232, 255, 0.4)" value={question} onChangeText={setQuestion} multiline/></View></View>
-              <View style={styles.section}><Text style={styles.stepTitle}>Ruh Halini Seç</Text><View style={styles.moodGrid}>{moods.map((mood) => (<TouchableOpacity key={mood.id} style={[styles.moodButton,selectedMood === mood.id && styles.moodButtonSelected]} onPress={() => setSelectedMood(mood.id)}><Text style={[styles.moodButtonText,selectedMood === mood.id && styles.moodButtonTextSelected]}>{mood.label}</Text></TouchableOpacity>))}</View></View>
-              <TouchableOpacity style={[styles.ctaButton, isButtonDisabled && styles.ctaButtonDisabled]} onPress={handleSubmit} disabled={isButtonDisabled}><LinearGradient colors={['#d4af37', '#F59E0B']} style={styles.ctaGradient}><Text style={styles.ctaButtonText}>Nova ile Sorgula</Text></LinearGradient></TouchableOpacity>
+              <View style={styles.section}>
+                  <Text style={styles.stepTitle}>{t('home.askNova')}</Text>
+                  <View style={styles.inputContainer}>
+                      <TextInput 
+                          style={styles.input} 
+                          placeholder={t('home.askPlaceholder')} 
+                          placeholderTextColor="rgba(243, 232, 255, 0.4)" 
+                          value={question} 
+                          onChangeText={setQuestion} 
+                          multiline
+                      />
+                  </View>
+              </View>
+              
+              <View style={styles.section}>
+                  <Text style={styles.stepTitle}>{t('home.moodLabel')}</Text>
+                  <View style={styles.moodGrid}>
+                      {moods.map((mood) => (
+                          <TouchableOpacity 
+                              key={mood.id} 
+                              style={[styles.moodButton,selectedMood === mood.id && styles.moodButtonSelected]} 
+                              onPress={() => setSelectedMood(mood.id)}
+                          >
+                              <Text style={[styles.moodButtonText,selectedMood === mood.id && styles.moodButtonTextSelected]}>
+                                  {mood.label}
+                              </Text>
+                          </TouchableOpacity>
+                      ))}
+                  </View>
+              </View>
+              
+              <TouchableOpacity 
+                  style={[styles.ctaButton, isButtonDisabled && styles.ctaButtonDisabled]} 
+                  onPress={handleSubmit} 
+                  disabled={isButtonDisabled}
+              >
+                  <LinearGradient colors={['#d4af37', '#F59E0B']} style={styles.ctaGradient}>
+                      <Text style={styles.ctaButtonText}>{t('home.interpretBtn')}</Text>
+                  </LinearGradient>
+              </TouchableOpacity>
             </LinearGradient>
           </View>
         </ScrollView>
@@ -111,6 +148,7 @@ const HomeScreen: React.FC = () => {
   );
 };
 
+// ... Styles (Aynı Kalıyor)
 const styles = StyleSheet.create({
   container: { flex: 1 },
   scrollContent: { flexGrow: 1 },

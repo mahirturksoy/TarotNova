@@ -1,6 +1,6 @@
 // app/screens/AuthScreen.tsx
 
-import React, { useState, useEffect } from "react";
+import React, { useState } from 'react';
 import {
   View,
   Text,
@@ -9,301 +9,217 @@ import {
   TouchableOpacity,
   Platform,
   KeyboardAvoidingView,
-  TouchableWithoutFeedback,
-  Keyboard,
+  ScrollView,
   ActivityIndicator,
   Alert,
-} from "react-native";
-import { LinearGradient } from "expo-linear-gradient";
-import { useNavigation } from "@react-navigation/native";
+} from 'react-native';
+import { LinearGradient } from 'expo-linear-gradient';
+import { useNavigation } from '@react-navigation/native';
+import { useTranslation } from 'react-i18next'; // Çeviri Hook
+
 import {
-  createUserWithEmailAndPassword,
-  signInWithEmailAndPassword,
-  GoogleAuthProvider,
-  signInWithCredential,
-} from "firebase/auth";
-import { GoogleSignin } from "@react-native-google-signin/google-signin";
-import { auth } from "../config/firebaseConfig";
+  signInWithEmail,
+  signUpWithEmail,
+  signInWithGoogle,
+  AuthError,
+} from '../services/authService';
+import { migrateGuestDataToUser } from '../services/readingHistoryService';
 
 const AuthScreen: React.FC = () => {
   const navigation = useNavigation();
-
+  const { t } = useTranslation(); // Hook
   const [isLogin, setIsLogin] = useState(true);
-  const [email, setEmail] = useState("");
-  const [password, setPassword] = useState("");
-  const [error, setError] = useState("");
-  const [loading, setLoading] = useState(false);
-  const [googleLoading, setGoogleLoading] = useState(false);
-
-  useEffect(() => {
-    GoogleSignin.configure({
-      // BURAYA Firebase Console -> Authentication -> Sign-in method -> Google -> Web Client ID'yi yapıştır
-      webClientId: "896638057555-e1mhgaq3qubearmknlm3j7be5qumtvoe.apps.googleusercontent.com",
-      offlineAccess: true,
-    });
-  }, []);
-
-  const onGoogleButtonPress = async () => {
-    setGoogleLoading(true);
-    setError("");
-    try {
-      await GoogleSignin.hasPlayServices({
-        showPlayServicesUpdateDialog: true,
-      });
-
-      const signInResult = await GoogleSignin.signIn();
-      // v16'da idToken her zaman data'nın içindedir.
-      const idToken = signInResult.data?.idToken;
-
-      if (!idToken) {
-        throw new Error("Google ID Token alınamadı");
-      }
-
-      const googleCredential = GoogleAuthProvider.credential(idToken);
-      await signInWithCredential(auth, googleCredential);
-
-      navigation.goBack();
-    } catch (err: any) {
-      console.error(err);
-      if (err.code === "12501") {
-        // Kullanıcı iptal etti, hata göstermeye gerek yok
-      } else {
-        setError("Google girişi başarısız oldu.");
-      }
-    } finally {
-      setGoogleLoading(false);
-    }
-  };
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
+  const [isLoading, setIsLoading] = useState(false);
 
   const handleAuth = async () => {
     if (!email || !password) {
-      setError("E-posta ve şifre alanları boş bırakılamaz.");
+      Alert.alert(t('common.error'), "Lütfen tüm alanları doldurun.");
       return;
     }
-    setLoading(true);
-    setError("");
 
+    setIsLoading(true);
     try {
       if (isLogin) {
-        await signInWithEmailAndPassword(auth, email, password);
+        await signInWithEmail(email, password);
       } else {
-        await createUserWithEmailAndPassword(auth, email, password);
+        await signUpWithEmail(email, password);
       }
+      await migrateGuestDataToUser();
       navigation.goBack();
-    } catch (err: any) {
-      if (err.code === "auth/invalid-email") {
-        setError("Lütfen geçerli bir e-posta adresi girin.");
-      } else if (
-        err.code === "auth/user-not-found" ||
-        err.code === "auth/wrong-password" ||
-        err.code === "auth/invalid-credential"
-      ) {
-        setError("E-posta veya şifre hatalı.");
-      } else if (err.code === "auth/email-already-in-use") {
-        setError("Bu e-posta adresi zaten kullanılıyor.");
-      } else {
-        setError("Bir hata oluştu. Lütfen tekrar deneyin.");
-      }
-      console.error(err);
+    } catch (error: any) {
+      const authError = error as AuthError;
+      Alert.alert(t('common.error'), authError.message);
     } finally {
-      setLoading(false);
+      setIsLoading(false);
+    }
+  };
+
+  const handleGoogleSignIn = async () => {
+    setIsLoading(true);
+    try {
+      await signInWithGoogle();
+      await migrateGuestDataToUser();
+      navigation.goBack();
+    } catch (error: any) {
+      const authError = error as AuthError;
+      if (authError.code !== 'auth/popup-closed-by-user' && authError.code !== 'auth/cancelled-popup-request') {
+         Alert.alert(t('common.error'), authError.message);
+      }
+    } finally {
+      setIsLoading(false);
     }
   };
 
   return (
-    <LinearGradient
-      colors={["#1d112b", "#2b173f", "#1d112b"]}
+    <KeyboardAvoidingView
       style={styles.container}
+      behavior={Platform.OS === 'ios' ? 'padding' : undefined}
     >
-      <KeyboardAvoidingView
-        behavior={Platform.OS === "ios" ? "padding" : "height"}
-        style={styles.container}
+      <LinearGradient
+        colors={['#2b173f', '#1d112b', '#000000']}
+        style={styles.gradient}
       >
-        <TouchableWithoutFeedback onPress={Keyboard.dismiss}>
-          <View style={styles.innerContainer}>
-            <View />
-            <View style={styles.content}>
-              <Text style={styles.logo}>TAROTNOVA</Text>
-              <Text style={styles.title}>
-                {isLogin ? "Giriş Yap" : "Hesap Oluştur"}
-              </Text>
+        <ScrollView contentContainerStyle={styles.scrollContent}>
+          <View style={styles.header}>
+            <Text style={styles.mysticIcon}>✦</Text>
+            {/* Çeviri */}
+            <Text style={styles.title}>{isLogin ? t('auth.login') : t('auth.createAccount')}</Text>
+          </View>
 
+          <View style={styles.form}>
+            <View style={styles.inputContainer}>
+              <Text style={styles.inputIcon}>📜</Text>
               <TextInput
                 style={styles.input}
-                placeholder="E-posta Adresi"
-                placeholderTextColor="rgba(243, 232, 255, 0.4)"
+                placeholder={t('auth.email')}
+                placeholderTextColor="rgba(243, 232, 255, 0.5)"
                 value={email}
                 onChangeText={setEmail}
                 keyboardType="email-address"
                 autoCapitalize="none"
               />
+            </View>
+
+            <View style={styles.inputContainer}>
+              <Text style={styles.inputIcon}>🔑</Text>
               <TextInput
                 style={styles.input}
-                placeholder="Şifre"
-                placeholderTextColor="rgba(243, 232, 255, 0.4)"
+                placeholder={t('auth.password')}
+                placeholderTextColor="rgba(243, 232, 255, 0.5)"
                 value={password}
                 onChangeText={setPassword}
                 secureTextEntry
               />
-
-              {error ? <Text style={styles.errorText}>{error}</Text> : null}
-
-              <TouchableOpacity
-                style={styles.ctaButton}
-                onPress={handleAuth}
-                disabled={loading || googleLoading}
-              >
-                <LinearGradient
-                  colors={["#d4af37", "#F59E0B"]}
-                  style={styles.ctaGradient}
-                >
-                  {loading ? (
-                    <ActivityIndicator color="#1d112b" />
-                  ) : (
-                    <Text style={styles.ctaButtonText}>
-                      {isLogin ? "Giriş Yap" : "Kayıt Ol"}
-                    </Text>
-                  )}
-                </LinearGradient>
-              </TouchableOpacity>
-
-              <View style={styles.dividerContainer}>
-                <View style={styles.dividerLine} />
-                <Text style={styles.dividerText}>veya</Text>
-                <View style={styles.dividerLine} />
-              </View>
-
-              <TouchableOpacity
-                style={styles.googleButton}
-                onPress={onGoogleButtonPress}
-                disabled={loading || googleLoading}
-              >
-                {googleLoading ? (
-                  <ActivityIndicator color="#d4af37" />
-                ) : (
-                  <>
-                    <Text style={styles.googleIcon}>G</Text>
-                    <Text style={styles.googleButtonText}>
-                      Google ile Devam Et
-                    </Text>
-                  </>
-                )}
-              </TouchableOpacity>
             </View>
 
             <TouchableOpacity
-              onPress={() => {
-                setIsLogin(!isLogin);
-                setError("");
-              }}
+              style={styles.authButton}
+              onPress={handleAuth}
+              disabled={isLoading}
+              activeOpacity={0.8}
             >
-              <Text style={styles.toggleText}>
-                {isLogin ? "Hesabın yok mu? " : "Zaten bir hesabın var mı? "}
-                <Text style={styles.toggleTextHighlight}>
-                  {isLogin ? "Kayıt Ol" : "Giriş Yap"}
-                </Text>
-              </Text>
+              <LinearGradient
+                colors={['#d4af37', '#F59E0B']}
+                style={styles.buttonGradient}
+              >
+                {isLoading ? (
+                  <ActivityIndicator color="#1d112b" />
+                ) : (
+                  <Text style={styles.buttonText}>
+                    {isLogin ? t('auth.login') : t('auth.register')}
+                  </Text>
+                )}
+              </LinearGradient>
             </TouchableOpacity>
+
+            <View style={styles.divider}>
+              <View style={styles.dividerLine} />
+              <Text style={styles.dividerText}>{t('auth.or')}</Text>
+              <View style={styles.dividerLine} />
+            </View>
+
+            {/* Google Butonu Tasarımı Güncellendi (Dark Theme) */}
+            <TouchableOpacity
+              style={styles.googleButton}
+              onPress={handleGoogleSignIn}
+              disabled={isLoading}
+            >
+              {/* İkonu Text G olarak koyduk, renkli yaptık */}
+              <Text style={styles.googleIconText}>G</Text>
+              <Text style={styles.googleButtonText}>{t('auth.googleBtn')}</Text>
+            </TouchableOpacity>
+
+            <View style={styles.switchContainer}>
+              <Text style={styles.switchText}>
+                {isLogin ? t('auth.noAccount') : t('auth.hasAccount')}
+              </Text>
+              <TouchableOpacity onPress={() => setIsLogin(!isLogin)}>
+                <Text style={styles.switchButton}>
+                  {isLogin ? t('auth.register') : t('auth.login')}
+                </Text>
+              </TouchableOpacity>
+            </View>
           </View>
-        </TouchableWithoutFeedback>
-      </KeyboardAvoidingView>
-    </LinearGradient>
+        </ScrollView>
+        
+        <TouchableOpacity style={styles.closeButton} onPress={() => navigation.goBack()}>
+            <Text style={styles.closeButtonText}>✕</Text>
+        </TouchableOpacity>
+      </LinearGradient>
+    </KeyboardAvoidingView>
   );
 };
 
 const styles = StyleSheet.create({
   container: { flex: 1 },
-  innerContainer: {
-    flex: 1,
-    justifyContent: "space-between",
-    paddingBottom: 40,
-    paddingHorizontal: 20,
+  gradient: { flex: 1, padding: 24, justifyContent: 'center' },
+  scrollContent: { flexGrow: 1, justifyContent: 'center' },
+  header: { alignItems: 'center', marginBottom: 40 },
+  mysticIcon: { fontSize: 64, color: '#d4af37', marginBottom: 16, textShadowColor: 'rgba(212, 175, 55, 0.5)', textShadowOffset: { width: 0, height: 0 }, textShadowRadius: 10 },
+  title: { fontSize: 32, fontWeight: 'bold', color: '#f3e8ff', fontFamily: Platform.select({ ios: 'Georgia-Bold', android: 'serif' }) },
+  form: { width: '100%' },
+  inputContainer: { flexDirection: 'row', alignItems: 'center', backgroundColor: 'rgba(43, 23, 63, 0.5)', borderRadius: 12, marginBottom: 16, paddingHorizontal: 16, borderWidth: 1, borderColor: 'rgba(212, 175, 55, 0.3)' },
+  inputIcon: { fontSize: 20, marginRight: 12 },
+  input: { flex: 1, paddingVertical: 16, color: '#f3e8ff', fontSize: 16, fontFamily: Platform.select({ ios: 'Georgia', android: 'serif' }) },
+  authButton: { borderRadius: 12, overflow: 'hidden', marginTop: 8, shadowColor: '#d4af37', shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.3, shadowRadius: 8, elevation: 5 },
+  buttonGradient: { paddingVertical: 16, alignItems: 'center' },
+  buttonText: { fontSize: 18, fontWeight: 'bold', color: '#1d112b', fontFamily: Platform.select({ ios: 'Georgia-Bold', android: 'serif' }) },
+  divider: { flexDirection: 'row', alignItems: 'center', marginVertical: 24 },
+  dividerLine: { flex: 1, height: 1, backgroundColor: 'rgba(243, 232, 255, 0.2)' },
+  dividerText: { color: 'rgba(243, 232, 255, 0.6)', paddingHorizontal: 16, fontFamily: Platform.select({ ios: 'Georgia', android: 'serif' }) },
+  
+  // YENİ GOOGLE BUTON STİLİ (KOYU TEMA)
+  googleButton: { 
+    flexDirection: 'row', 
+    alignItems: 'center', 
+    justifyContent: 'center', 
+    backgroundColor: 'rgba(255, 255, 255, 0.05)', // Şeffaf koyu
+    borderRadius: 12, 
+    paddingVertical: 16, 
+    borderWidth: 1, 
+    borderColor: 'rgba(255, 255, 255, 0.2)' 
   },
-  content: { width: "100%", alignItems: "center" },
-  logo: {
-    fontSize: 32,
-    fontWeight: "700",
-    color: "#d4af37",
-    letterSpacing: 4,
-    fontFamily: Platform.select({ ios: "Georgia", android: "serif" }),
-    textShadowColor: "rgba(212, 175, 55, 0.6)",
-    textShadowOffset: { width: 0, height: 0 },
-    textShadowRadius: 8,
-    marginBottom: 40,
+  googleIconText: {
+    fontSize: 22,
+    fontWeight: 'bold',
+    color: '#d4af37', // Altın rengi G
+    marginRight: 12,
+    fontFamily: Platform.select({ ios: 'Georgia-Bold', android: 'serif' })
   },
-  title: {
-    fontSize: 24,
-    color: "#f3e8ff",
-    fontFamily: Platform.select({ ios: "Georgia-Bold", android: "serif" }),
-    marginBottom: 24,
+  googleButtonText: { 
+    fontSize: 16, 
+    fontWeight: '600', 
+    color: '#f3e8ff', // Açık renk yazı
+    fontFamily: Platform.select({ ios: 'Georgia', android: 'serif' }) 
   },
-  input: {
-    width: "100%",
-    height: 50,
-    backgroundColor: "rgba(0, 0, 0, 0.2)",
-    borderRadius: 12,
-    paddingHorizontal: 16,
-    fontSize: 16,
-    color: "#f3e8ff",
-    fontFamily: Platform.select({ ios: "Georgia", android: "serif" }),
-    borderWidth: 1,
-    borderColor: "rgba(212, 175, 55, 0.5)",
-    marginBottom: 16,
-  },
-  errorText: { color: "#EF4444", marginBottom: 12, textAlign: "center" },
-  ctaButton: {
-    width: "100%",
-    borderRadius: 12,
-    overflow: "hidden",
-    marginTop: 8,
-  },
-  ctaGradient: { paddingVertical: 15, alignItems: "center" },
-  ctaButtonText: {
-    fontSize: 17,
-    fontWeight: "bold",
-    color: "#1d112b",
-    fontFamily: Platform.select({ ios: "Georgia-Bold", android: "serif" }),
-  },
-  dividerContainer: {
-    flexDirection: "row",
-    alignItems: "center",
-    width: "100%",
-    marginVertical: 20,
-  },
-  dividerLine: {
-    flex: 1,
-    height: 1,
-    backgroundColor: "rgba(243, 232, 255, 0.2)",
-  },
-  dividerText: {
-    color: "rgba(243, 232, 255, 0.5)",
-    paddingHorizontal: 10,
-    fontSize: 14,
-  },
-  googleButton: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "center",
-    width: "100%",
-    height: 50,
-    backgroundColor: "rgba(255, 255, 255, 0.1)",
-    borderRadius: 12,
-    borderWidth: 1,
-    borderColor: "rgba(255, 255, 255, 0.2)",
-  },
-  googleIcon: {
-    fontSize: 20,
-    fontWeight: "bold",
-    color: "#d4af37",
-    marginRight: 10,
-  },
-  googleButtonText: { fontSize: 16, color: "#f3e8ff", fontWeight: "600" },
-  toggleText: {
-    color: "rgba(243, 232, 255, 0.7)",
-    textAlign: "center",
-    fontSize: 15,
-  },
-  toggleTextHighlight: { color: "#d4af37", fontWeight: "bold" },
+
+  switchContainer: { flexDirection: 'row', justifyContent: 'center', marginTop: 24 },
+  switchText: { color: 'rgba(243, 232, 255, 0.8)', marginRight: 8, fontFamily: Platform.select({ ios: 'Georgia', android: 'serif' }) },
+  switchButton: { color: '#d4af37', fontWeight: 'bold', fontFamily: Platform.select({ ios: 'Georgia-Bold', android: 'serif' }) },
+  closeButton: { position: 'absolute', top: 50, right: 24, zIndex: 10, padding: 8 },
+  closeButtonText: { fontSize: 24, color: 'rgba(243, 232, 255, 0.6)' }
 });
 
 export default AuthScreen;

@@ -1,35 +1,21 @@
 // app/screens/FavoritesScreen.tsx
 
 import React, { useState, useCallback } from 'react';
-import {
-  View,
-  Text,
-  TouchableOpacity,
-  StyleSheet,
-  FlatList,
-  Platform,
-  Image,
-  ScrollView
-} from 'react-native';
+import { View, Text, TouchableOpacity, StyleSheet, FlatList, Platform, Image, ScrollView } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useNavigation, useFocusEffect, CompositeNavigationProp } from '@react-navigation/native';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
-import type { BottomTabNavigationProp } from '@react-navigation/bottom-tabs'; // EKLENDİ
+import type { BottomTabNavigationProp } from '@react-navigation/bottom-tabs';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { useTranslation } from 'react-i18next'; 
 
-import {
-  ReadingHistoryItem,
-  getFavoriteReadings,
-  toggleReadingFavorite
-} from '../services/readingHistoryService';
-import type { RootStackParamList, TabParamList } from '../types/navigation'; // TabParamList Eklendi
+import { ReadingHistoryItem, getFavoriteReadings, toggleReadingFavorite } from '../services/readingHistoryService';
+import type { RootStackParamList, TabParamList } from '../types/navigation';
 import { MAJOR_ARCANA, getCardImage } from '../constants/tarotDeck';
 import MysticConfirmationModal from '../components/MysticConfirmationModal';
 
 const cardDataMap = new Map(MAJOR_ARCANA.map(card => [card.name, card]));
 
-// DÜZELTME: Navigasyon tipi Composite olarak güncellendi
-// "Favoriler" tabı ve Root stack özelliklerini birleştiriyoruz.
 type FavoritesScreenNavigationProp = CompositeNavigationProp<
   BottomTabNavigationProp<TabParamList, 'Favoriler'>,
   NativeStackNavigationProp<RootStackParamList>
@@ -38,6 +24,7 @@ type FavoritesScreenNavigationProp = CompositeNavigationProp<
 const FavoritesScreen: React.FC = () => {
   const navigation = useNavigation<FavoritesScreenNavigationProp>();
   const insets = useSafeAreaInsets();
+  const { t } = useTranslation(); 
   
   const [favoriteReadings, setFavoriteReadings] = useState<ReadingHistoryItem[]>([]);
   const [isLoading, setIsLoading] = useState(true);
@@ -83,59 +70,34 @@ const FavoritesScreen: React.FC = () => {
   
   const renderFavoriteCard = ({ item }: { item: ReadingHistoryItem }) => {
     return (
-      <TouchableOpacity
-        style={styles.favoriteCard}
-        onPress={() => handleReadingPress(item)}
-        activeOpacity={0.8}
-      >
-        <LinearGradient
-          colors={['rgba(74, 4, 78, 0.3)', 'rgba(74, 4, 78, 0.5)']}
-          style={styles.cardGradient}
-        >
+      <TouchableOpacity style={styles.favoriteCard} onPress={() => handleReadingPress(item)} activeOpacity={0.8}>
+        <LinearGradient colors={['rgba(74, 4, 78, 0.3)', 'rgba(74, 4, 78, 0.5)']} style={styles.cardGradient}>
           <View style={styles.cardHeader}>
             <Text style={styles.cardQuestion} numberOfLines={2}>"{item.question}"</Text>
-            <TouchableOpacity
-              style={styles.favoriteButton}
-              onPress={() => handleRemoveFavorite(item.id)}
-            >
+            <TouchableOpacity style={styles.favoriteButton} onPress={() => handleRemoveFavorite(item.id)}>
               <Text style={styles.favoriteIcon}>★</Text>
             </TouchableOpacity>
           </View>
-
-          <ScrollView
-            horizontal
-            showsHorizontalScrollIndicator={false}
-            contentContainerStyle={styles.cardImageGallery}
-          >
+          <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.cardImageGallery}>
             {item.cards.map((cardName, index) => {
               const card = cardDataMap.get(cardName);
               if (!card) return null;
               const cardImage = getCardImage(card.imageName);
-              return (
-                <View key={index} style={styles.miniCardContainer}>
-                  <Image source={cardImage} style={styles.miniCardImage} />
-                </View>
-              );
+              return ( <View key={index} style={styles.miniCardContainer}><Image source={cardImage} style={styles.miniCardImage} /></View> );
             })}
           </ScrollView>
-
-          <View style={styles.wisdomContainer}>
-            <Text style={styles.wisdomText} numberOfLines={3}>
-              {item.summary}
-            </Text>
-          </View>
+          <View style={styles.wisdomContainer}><Text style={styles.wisdomText} numberOfLines={3}>{item.summary}</Text></View>
         </LinearGradient>
       </TouchableOpacity>
     );
   };
 
+  // DÜZELTME 1: Emoji yerine Mistik Nova Yıldızı (✦) kullanıldı ve stillendirildi.
   const renderEmptyState = () => (
     <View style={styles.emptyState}>
-      <Text style={styles.emptyStateIcon}>⭐</Text>
-      <Text style={styles.emptyStateTitle}>Henüz favori okumanız yok</Text>
-      <Text style={styles.emptyStateText}>
-        Beğendiğiniz okumaları favorilere ekleyerek buradan kolayca erişebilirsiniz
-      </Text>
+      <Text style={styles.mysticEmptyIcon}>✦</Text> 
+      <Text style={styles.emptyStateTitle}>{t('favorites.empty.title')}</Text>
+      <Text style={styles.emptyStateText}>{t('favorites.empty.subtitle')}</Text>
     </View>
   );
 
@@ -155,11 +117,11 @@ const FavoritesScreen: React.FC = () => {
       <MysticConfirmationModal
         visible={isModalVisible}
         onClose={() => setModalVisible(false)}
-        title="Favorilerden Çıkar"
-        subtitle="Bu özel anıyı favorileriniz arasından kaldırmak istediğinize emin misiniz?"
+        title={t('favorites.removeModal.title')}
+        subtitle={t('favorites.removeModal.message')}
         buttons={[
-          { text: 'İptal', onPress: () => setModalVisible(false), style: 'default' },
-          { text: 'Çıkar', onPress: confirmUnfavorite, style: 'destructive' },
+          { text: t('common.cancel'), onPress: () => setModalVisible(false), style: 'default' },
+          { text: t('favorites.removeModal.btn'), onPress: confirmUnfavorite, style: 'destructive' },
         ]}
       />
     </>
@@ -180,8 +142,17 @@ const styles = StyleSheet.create({
   miniCardImage: { width: '100%', height: '100%' },
   wisdomContainer: { borderTopWidth: 1, borderTopColor: 'rgba(212, 175, 55, 0.2)', paddingTop: 12 },
   wisdomText: { fontSize: 14, color: 'rgba(243, 232, 255, 0.8)', fontFamily: Platform.select({ ios: 'Georgia-Italic', android: 'serif' }), fontStyle: 'italic', lineHeight: 20 },
-  emptyState: { alignItems: 'center', paddingVertical: 60, paddingHorizontal: 40, marginTop: '30%' },
-  emptyStateIcon: { fontSize: 64, marginBottom: 16 },
+  emptyState: { alignItems: 'center', paddingVertical: 60, paddingHorizontal: 40, marginTop: '20%' },
+  
+  // YENİ STİL: Mistik Yıldız için
+  mysticEmptyIcon: { 
+    fontSize: 80, 
+    color: '#d4af37', 
+    marginBottom: 20,
+    textShadowColor: 'rgba(212, 175, 55, 0.5)',
+    textShadowOffset: { width: 0, height: 0 },
+    textShadowRadius: 20
+  },
   emptyStateTitle: { fontSize: 20, fontWeight: 'bold', color: '#f3e8ff', marginBottom: 8, textAlign: 'center', fontFamily: Platform.select({ ios: 'Georgia', android: 'serif' }) },
   emptyStateText: { fontSize: 16, color: 'rgba(243, 232, 255, 0.8)', textAlign: 'center', lineHeight: 24 },
 });

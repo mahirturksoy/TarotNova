@@ -13,6 +13,7 @@ import {
 import { LinearGradient } from 'expo-linear-gradient';
 import { useNavigation, useRoute } from '@react-navigation/native';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
+import { useTranslation } from 'react-i18next'; // <-- ÇEVİRİ EKLENDİ
 
 import { toggleReadingFavorite, deleteReading } from '../services/readingHistoryService';
 import type { RootStackParamList } from '../types/navigation';
@@ -29,6 +30,7 @@ interface RouteParams {
 const ReadingDetailScreen: React.FC = () => {
   const navigation = useNavigation<ReadingDetailScreenNavigationProp>();
   const route = useRoute();
+  const { t } = useTranslation(); // <-- HOOK EKLENDİ
   const { reading: initialReading } = route.params as RouteParams;
 
   const [reading, setReading] = useState<ReadingHistoryItem>(initialReading);
@@ -43,7 +45,7 @@ const ReadingDetailScreen: React.FC = () => {
       setReading(prev => ({ ...prev, isFavorite: !prev.isFavorite }));
     } catch (error) {
       console.error('Favori durumu değiştirilemedi:', error);
-      Alert.alert('Hata', 'Favori durumu değiştirilemedi');
+      Alert.alert(t('common.error'), 'Favori durumu değiştirilemedi');
     } finally {
       setIsUpdating(false);
     }
@@ -61,12 +63,15 @@ const ReadingDetailScreen: React.FC = () => {
     } catch (error) {
       console.error('Okuma silinemedi:', error);
       setDeleteModalVisible(false);
-      Alert.alert('Hata', 'Okuma silinemedi');
+      Alert.alert(t('common.error'), 'Okuma silinemedi');
     }
   };
 
   useLayoutEffect(() => {
     navigation.setOptions({
+      // BAŞLIKLARI ÇEVİRİYORUZ
+      title: t('reading.title'), 
+      headerBackTitle: t('common.back'),
       headerRight: () => (
         <View style={styles.headerActions}>
           <TouchableOpacity onPress={handleFavoriteToggle} disabled={isUpdating} style={styles.navButton}>
@@ -80,7 +85,7 @@ const ReadingDetailScreen: React.FC = () => {
         </View>
       ),
     });
-  }, [navigation, reading.isFavorite, isUpdating]);
+  }, [navigation, reading.isFavorite, isUpdating, t]); // 't' eklendi
   
   const readingForDisplay = {
     question: reading.question,
@@ -102,15 +107,15 @@ const ReadingDetailScreen: React.FC = () => {
         </LinearGradient>
       </ScrollView>
 
-      {/* DEĞİŞİKLİK: Seçtiğiniz mistik başlık ve mesaj modal'a eklendi */}
+      {/* MODAL METİNLERİ ÇEVRİLDİ */}
       <MysticConfirmationModal
         visible={isDeleteModalVisible}
         onClose={() => setDeleteModalVisible(false)}
-        title="Sonsuzluğa Uğurla"
-        subtitle="Bu okumayı anılar arasından sonsuzluğa uğurlamak bir daha geri getiremez. Devam edilsin mi?"
+        title={t('history.deleteModal.title')}
+        subtitle={t('history.deleteModal.message')}
         buttons={[
-          { text: 'İptal', onPress: () => setDeleteModalVisible(false), style: 'default' },
-          { text: 'Sil', onPress: confirmDelete, style: 'destructive' },
+          { text: t('common.cancel'), onPress: () => setDeleteModalVisible(false), style: 'default' },
+          { text: t('common.delete'), onPress: confirmDelete, style: 'destructive' },
         ]}
       />
     </>
