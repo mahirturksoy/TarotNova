@@ -1,8 +1,8 @@
 // app/services/novaApiService.ts
 
-import i18n from '../i18n'; // <-- 1. Dil ayarını içeri aldık
+import i18n from '../i18n'; 
 
-// Çalışan Anahtarın
+// Anahtarı buraya tırnak içine yapıştır.
 const GEMINI_API_KEY = "AIzaSyA-Z1nDHGbF3nDeT4lav_UEO38h_Q1DzOw";
 
 interface ReadingPayload {
@@ -23,7 +23,7 @@ export interface TarotAIResponse {
   summary: string;
 }
 
-// 2. Dil İsimlerini Tanımladık (AI'ya İngilizce komut vereceğiz)
+// Sadece Türkçe ve İngilizce desteği (Kararlaştırdığımız gibi)
 const LANGUAGE_NAMES: Record<string, string> = {
   tr: 'Turkish',
   en: 'English'
@@ -31,22 +31,22 @@ const LANGUAGE_NAMES: Record<string, string> = {
 
 export const generateTarotInterpretation = async (payload: ReadingPayload): Promise<TarotAIResponse> => {
   
-  // 3. O anki aktif dili buluyoruz
+  // 1. Dil Ayarı: i18n'den dili al, listemizde yoksa İngilizce yap.
   const currentLangCode = i18n.language || 'tr';
   const targetLanguage = LANGUAGE_NAMES[currentLangCode] || 'English';
 
-  // ✅ ÇÖZÜM: Senin çalışan kodundaki Model ve URL yapısı (Aynen korundu)
+  // ✅ SENİN ÇALIŞAN MODELİN VE AYARLARIN
   const MODEL_NAME = "gemini-2.5-flash";
   const API_URL = `https://generativelanguage.googleapis.com/v1beta/models/${MODEL_NAME}:generateContent?key=${GEMINI_API_KEY}`;
 
-  console.log(`🌍 Nova Dili: ${targetLanguage} (${currentLangCode})`);
+  console.log(`🌍 Nova Dili: ${targetLanguage}`);
   console.log(`📡 İstek gönderiliyor: ${MODEL_NAME}`);
 
-  // 4. Prompt'u güncelledik: "Cevabı şu dilde ver" kuralı eklendi.
+  // 2. Prompt: Sadece dil kuralı eklendi, geri kalanı aynı.
   const prompt = `
     You are a mystical tarot reader named Nova.
     
-    IMPORTANT RULE: You MUST write your ENTIRE response in ${targetLanguage}.
+    CRITICAL RULE: You MUST write your ENTIRE response in ${targetLanguage}.
     
     USER INFO:
     - Question: "${payload.question}"
@@ -79,8 +79,8 @@ export const generateTarotInterpretation = async (payload: ReadingPayload): Prom
         contents: [{
           parts: [{ text: prompt }]
         }],
+        // ✅ SENİN ÇALIŞAN CONFIG AYARLARIN
         generationConfig: {
-          // ✅ Senin çalışan config ayarların (Aynen korundu)
           temperature: 0.7,
           topK: 40,
           topP: 0.95,
@@ -101,7 +101,7 @@ export const generateTarotInterpretation = async (payload: ReadingPayload): Prom
     if (data.candidates && data.candidates.length > 0 && data.candidates[0].content) {
         let textResponse = data.candidates[0].content.parts[0].text;
         
-        // ✅ Senin çalışan temizlik kodun (Aynen korundu)
+        // ✅ SENİN ÇALIŞAN TEMİZLİK KODUN
         textResponse = textResponse.replace(/```json\n?/g, '').replace(/```\n?/g, '').trim();
         
         return JSON.parse(textResponse);
