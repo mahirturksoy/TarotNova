@@ -8,6 +8,7 @@
     "userInterfaceStyle": "dark",
     "newArchEnabled": false,
     "splash": {
+      "image": "./assets/transparent-logo.png",
       "resizeMode": "contain",
       "backgroundColor": "#1d112b"
     },
