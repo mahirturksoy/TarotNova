@@ -10,11 +10,16 @@ export interface CardDetail {
   advice: string;
 }
 
+export type SpreadType = {
+  id: string;
+  name: string;
+  cardCount: number;
+};
+
 interface ReadingData {
   question: string;
   mood: string;
-  // Basitleştirilmiş Spread Type (Service ile uyumlu)
-  spreadType?: { id: string; name: string; cardCount: number }; 
+  spreadType?: SpreadType;
   selectedCards: string[];
 }
 
@@ -25,7 +30,7 @@ interface ReadingContextType {
   summary: string | null;
   isLoading: boolean;
   startNewReading: (data: ReadingData, response: TarotAIResponse) => void;
-  generateReading: (question: string, mood: string, cards: string[], spreadType?: any) => Promise<void>; 
+  generateReading: (question: string, mood: string, cards: string[], spreadType?: SpreadType) => Promise<void>;
   setIsLoading: (loading: boolean) => void; 
 }
 

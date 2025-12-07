@@ -27,7 +27,7 @@ GoogleSignin.configure({
 export const signInWithEmail = async (email: string, pass: string): Promise<UserCredential> => {
   try {
     return await signInWithEmailAndPassword(auth, email, pass);
-  } catch (error: any) {
+  } catch (error: unknown) {
     throw formatAuthError(error);
   }
 };
@@ -36,7 +36,7 @@ export const signInWithEmail = async (email: string, pass: string): Promise<User
 export const signUpWithEmail = async (email: string, pass: string): Promise<UserCredential> => {
   try {
     return await createUserWithEmailAndPassword(auth, email, pass);
-  } catch (error: any) {
+  } catch (error: unknown) {
     throw formatAuthError(error);
   }
 };
@@ -60,9 +60,10 @@ export const signInWithGoogle = async (): Promise<UserCredential | null> => {
 
     // Firebase'e giriş yap
     return await signInWithCredential(auth, googleCredential);
-  } catch (error: any) {
+  } catch (error: unknown) {
     // Kullanıcı iptal ettiyse sessizce dön
-    if (error.code === '12501' || error.code === 'SIGN_IN_CANCELLED') {
+    if (error && typeof error === 'object' && 'code' in error &&
+        (error.code === '12501' || error.code === 'SIGN_IN_CANCELLED')) {
         throw { code: 'auth/cancelled-popup-request', message: 'Giriş iptal edildi.' };
     }
     throw formatAuthError(error);
@@ -70,34 +71,43 @@ export const signInWithGoogle = async (): Promise<UserCredential | null> => {
 };
 
 // Hata Mesajlarını Türkçeleştirme/Formatlama Yardımcısı
-const formatAuthError = (error: any): AuthError => {
+const formatAuthError = (error: unknown): AuthError => {
   let message = 'Bir hata oluştu.';
-  
-  switch (error.code) {
-    case 'auth/invalid-email':
-      message = 'Geçersiz e-posta adresi.';
-      break;
-    case 'auth/user-disabled':
-      message = 'Bu hesap devre dışı bırakılmış.';
-      break;
-    case 'auth/user-not-found':
-      message = 'Böyle bir kullanıcı bulunamadı.';
-      break;
-    case 'auth/wrong-password':
-      message = 'Hatalı şifre.';
-      break;
-    case 'auth/email-already-in-use':
-      message = 'Bu e-posta adresi zaten kullanımda.';
-      break;
-    case 'auth/weak-password':
-      message = 'Şifre çok zayıf (en az 6 karakter olmalı).';
-      break;
-    case 'auth/network-request-failed':
-      message = 'İnternet bağlantınızı kontrol edin.';
-      break;
-    default:
-      message = error.message || 'Giriş işlemi başarısız.';
+  let code = 'unknown';
+
+  if (error && typeof error === 'object' && 'code' in error) {
+    code = typeof error.code === 'string' ? error.code : 'unknown';
+
+    switch (code) {
+      case 'auth/invalid-email':
+        message = 'Geçersiz e-posta adresi.';
+        break;
+      case 'auth/user-disabled':
+        message = 'Bu hesap devre dışı bırakılmış.';
+        break;
+      case 'auth/user-not-found':
+        message = 'Böyle bir kullanıcı bulunamadı.';
+        break;
+      case 'auth/wrong-password':
+        message = 'Hatalı şifre.';
+        break;
+      case 'auth/email-already-in-use':
+        message = 'Bu e-posta adresi zaten kullanımda.';
+        break;
+      case 'auth/weak-password':
+        message = 'Şifre çok zayıf (en az 6 karakter olmalı).';
+        break;
+      case 'auth/network-request-failed':
+        message = 'İnternet bağlantınızı kontrol edin.';
+        break;
+      default:
+        if ('message' in error && typeof error.message === 'string') {
+          message = error.message;
+        } else {
+          message = 'Giriş işlemi başarısız.';
+        }
+    }
   }
 
-  return { code: error.code, message };
+  return { code, message };
 };

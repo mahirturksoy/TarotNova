@@ -31,7 +31,9 @@
       "~/*": [
         "./*"
       ]
-    }
+    },
+    "typeRoots": ["./node_modules/@types", "./app/types"],
+    "types": []
   },
   "include": [
     "**/*.ts",

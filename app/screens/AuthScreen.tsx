@@ -48,7 +48,7 @@ const AuthScreen: React.FC = () => {
       }
       await migrateGuestDataToUser();
       navigation.goBack();
-    } catch (error: any) {
+    } catch (error: unknown) {
       const authError = error as AuthError;
       Alert.alert(t('common.error'), authError.message);
     } finally {
@@ -62,7 +62,7 @@ const AuthScreen: React.FC = () => {
       await signInWithGoogle();
       await migrateGuestDataToUser();
       navigation.goBack();
-    } catch (error: any) {
+    } catch (error: unknown) {
       const authError = error as AuthError;
       if (authError.code !== 'auth/popup-closed-by-user' && authError.code !== 'auth/cancelled-popup-request') {
          Alert.alert(t('common.error'), authError.message);

@@ -1,5 +1,5 @@
 import React, { useRef, useEffect } from 'react';
-import { View, Text, StyleSheet, Animated, TouchableOpacity, Dimensions } from 'react-native';
+import { View, Text, StyleSheet, Animated, TouchableOpacity, Dimensions, StyleProp, ViewStyle } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 
 const { width } = Dimensions.get('window');
@@ -12,7 +12,7 @@ interface TarotCardComponentProps {
   onPress: () => void;
   selectionIndex?: number;
   size?: 'small' | 'medium' | 'large';
-  style?: any;
+  style?: StyleProp<ViewStyle>;
 }
 
 // Premium Tarot kartı bileşeni

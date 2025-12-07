@@ -6,40 +6,131 @@ import { LinearGradient } from 'expo-linear-gradient';
 import { useNavigation } from '@react-navigation/native';
 import { useTranslation } from 'react-i18next'; // <-- ÇEVİRİ EKLENDİ
 
-import PurchaseService from '../services/purchaseService'; // <-- SERVİS EKLENDİ
+import PurchaseService, { OfferingPackage } from '../services/purchaseService'; // <-- SERVİS EKLENDİ
+import Toast from 'react-native-toast-message';
 
 const PremiumScreen: React.FC = () => {
   const navigation = useNavigation();
   const { t, i18n } = useTranslation(); // <-- HOOK
   const [loading, setLoading] = useState(false);
-  const [priceText, setPriceText] = useState(t('common.loading')); 
-  const [packages, setPackages] = useState<any[]>([]);
+  const [priceText, setPriceText] = useState(t('common.loading'));
+  const [packages, setPackages] = useState<OfferingPackage[]>([]); // <-- TİP DEĞİŞTİ
 
   useEffect(() => {
     loadOfferings();
   }, [t]); 
 
   const loadOfferings = async () => {
-    const offerings = await PurchaseService.getOfferings();
-    
-    // Dil kontrolü: Türkçe ise 'Ay', değilse 'Month'
-    const monthLabel = i18n.language === 'tr' ? 'Ay' : 'Month';
+    try {
+      const offerings = await PurchaseService.getOfferings();
 
-    if (offerings.length > 0) {
-      setPackages(offerings);
-      setPriceText(`${offerings[0].product.priceString} / ${monthLabel}`);
-    } else {
-      setPriceText(t('premium.price')); // Fallback: Dil dosyasından gelir (₺50.00 / Ay)
+      // Dil kontrolü: Türkçe ise 'Ay', değilse 'Month'
+      const monthLabel = i18n.language === 'tr' ? 'Ay' : 'Month';
+      const yearLabel = i18n.language === 'tr' ? 'Yıl' : 'Year';
+
+      if (offerings.length > 0) {
+        setPackages(offerings);
+
+        // Monthly paketi öncelikli göster
+        const monthlyPkg = offerings.find(p => p.identifier.toLowerCase().includes('monthly'));
+        const yearlyPkg = offerings.find(p => p.identifier.toLowerCase().includes('annual') || p.identifier.toLowerCase().includes('yearly'));
+
+        if (monthlyPkg) {
+          setPriceText(`${monthlyPkg.product.priceString} / ${monthLabel}`);
+        } else if (offerings[0]) {
+          setPriceText(`${offerings[0].product.priceString} / ${monthLabel}`);
+        }
+      } else {
+        // Offerings yüklenemedi - kullanıcıya bildir
+        Toast.show({
+          type: 'error',
+          text1: i18n.language === 'tr' ? 'Bağlantı Hatası' : 'Connection Error',
+          text2: i18n.language === 'tr' ? 'Premium paketler yüklenemedi. Lütfen tekrar deneyin.' : 'Failed to load premium packages. Please try again.',
+        });
+        setPriceText(t('premium.price')); // Fallback: Dil dosyasından gelir (₺50.00 / Ay)
+      }
+    } catch (error) {
+      console.error('❌ Load offerings error:', error);
+      Toast.show({
+        type: 'error',
+        text1: i18n.language === 'tr' ? 'Hata' : 'Error',
+        text2: i18n.language === 'tr' ? 'Bir hata oluştu. Lütfen tekrar deneyin.' : 'An error occurred. Please try again.',
+      });
+      setPriceText(t('premium.price'));
     }
   };
 
   const handlePurchase = async () => {
+    if (packages.length === 0) {
+      Toast.show({
+        type: 'error',
+        text1: i18n.language === 'tr' ? 'Hata' : 'Error',
+        text2: i18n.language === 'tr' ? 'Paketler yüklenemedi' : 'Failed to load packages',
+      });
+      return;
+    }
+
     setLoading(true);
-    const success = await PurchaseService.purchasePackage(packages[0] || null);
+
+    // Monthly paketi öncelikli kullan
+    const selectedPackage = packages.find(p => p.identifier.toLowerCase().includes('monthly')) || packages[0];
+
+    // Type safety: packages.length kontrolü üstte yapıldı ama yine de assert edelim
+    if (!selectedPackage) {
+      setLoading(false);
+      Toast.show({
+        type: 'error',
+        text1: i18n.language === 'tr' ? 'Hata' : 'Error',
+        text2: i18n.language === 'tr' ? 'Paket seçilemedi' : 'Failed to select package',
+      });
+      return;
+    }
+
+    const success = await PurchaseService.purchasePackage(selectedPackage);
+
     setLoading(false);
 
     if (success) {
-      navigation.goBack();
+      Toast.show({
+        type: 'success',
+        text1: i18n.language === 'tr' ? '✨ Tebrikler!' : '✨ Congratulations!',
+        text2: i18n.language === 'tr' ? 'Premium üyeliğiniz aktif' : 'Your premium membership is active',
+      });
+
+      // Kısa bir delay sonra geri dön (toast görünsün diye)
+      setTimeout(() => {
+        navigation.goBack();
+      }, 1500);
+    } else {
+      Toast.show({
+        type: 'info',
+        text1: i18n.language === 'tr' ? 'İptal Edildi' : 'Cancelled',
+        text2: i18n.language === 'tr' ? 'Satın alma iptal edildi' : 'Purchase was cancelled',
+      });
+    }
+  };
+
+  const handleRestore = async () => {
+    setLoading(true);
+    const restored = await PurchaseService.restorePurchases();
+    setLoading(false);
+
+    if (restored) {
+      Toast.show({
+        type: 'success',
+        text1: i18n.language === 'tr' ? '✅ Geri Yüklendi' : '✅ Restored',
+        text2: i18n.language === 'tr' ? 'Satın alımlarınız geri yüklendi' : 'Your purchases have been restored',
+      });
+
+      setTimeout(() => {
+        navigation.goBack();
+      }, 1500);
+    } else {
+      Toast.show({
+        type: 'info',
+        text1: i18n.language === 'tr' ? 'Bilgi' : 'Info',
+        text2: i18n.language === 'tr' ? 'Aktif abonelik bulunamadı' : 'No active subscription found',
+      });
     }
   };
 
@@ -78,6 +169,16 @@ const PremiumScreen: React.FC = () => {
                 </>
             )}
           </LinearGradient>
+        </TouchableOpacity>
+
+        <TouchableOpacity
+          style={styles.restoreButton}
+          onPress={handleRestore}
+          disabled={loading}
+        >
+          <Text style={styles.restoreButtonText}>
+            {i18n.language === 'tr' ? 'Satın Alımları Geri Yükle' : 'Restore Purchases'}
+          </Text>
         </TouchableOpacity>
 
         <TouchableOpacity style={styles.closeButton} onPress={() => navigation.goBack()}>
@@ -194,21 +295,34 @@ const styles = StyleSheet.create({
     color: '#1d112b',
     fontFamily: Platform.select({ ios: 'Georgia-Bold', android: 'serif' })
   },
-  priceText: { 
-    fontSize: 14, 
-    color: '#1d112b', 
-    marginTop: 4, 
+  priceText: {
+    fontSize: 14,
+    color: '#1d112b',
+    marginTop: 4,
     fontWeight: '600',
     opacity: 0.8
   },
-  
-  closeButton: { 
-    padding: 12 
+
+  restoreButton: {
+    padding: 12,
+    marginBottom: 8,
   },
-  closeButtonText: { 
-    color: 'rgba(243, 232, 255, 0.4)', 
+  restoreButtonText: {
+    color: 'rgba(243, 232, 255, 0.6)',
+    fontSize: 13,
+    fontFamily: Platform.select({ ios: 'Georgia', android: 'serif' }),
+    textDecorationLine: 'underline',
+    textAlign: 'center',
+  },
+
+  closeButton: {
+    padding: 12
+  },
+  closeButtonText: {
+    color: 'rgba(243, 232, 255, 0.4)',
     fontSize: 15,
-    fontFamily: Platform.select({ ios: 'Georgia', android: 'serif' })
+    fontFamily: Platform.select({ ios: 'Georgia', android: 'serif' }),
+    textAlign: 'center',
   },
 });
 

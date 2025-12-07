@@ -19,6 +19,17 @@ web-build/
 *.p12
 *.key
 *.mobileprovision
+*.keystore
+
+# Android Release
+android/gradle.properties.local
+android/app/release.keystore
+android/app/tarotnova-release.keystore
+
+# iOS Build
+ios/build/
+ios/Pods/
+ios/.xcodebuild/
 
 # Metro
 .metro-health-check*

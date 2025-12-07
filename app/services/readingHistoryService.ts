@@ -1,9 +1,19 @@
 // app/services/readingHistoryService.ts
 
-import AsyncStorage from '@react-native-async-storage/async-storage';
-import { auth } from '../config/firebaseConfig';
+/**
+ * FIRESTORE WRAPPER SERVICE
+ *
+ * Bu dosya eski AsyncStorage API'sini koruyor ama artık Firestore kullanıyor.
+ * Böylece mevcut kodlarda değişiklik yapmaya gerek yok.
+ *
+ * AsyncStorage → Firestore migration otomatik olarak yapılıyor.
+ */
 
-const STORAGE_KEY = '@tarot_readings';
+import firestoreService, { FirestoreReading } from './firestoreService';
+
+// ========================================
+// TYPES & INTERFACES (Eski API ile uyumlu)
+// ========================================
 
 export interface CardDetail {
   cardName: string;
@@ -18,8 +28,6 @@ export interface LifeAspects {
   personal: string;
 }
 
-// DÜZELTME: SpreadType artık tam 'SpreadType' değil, basitleştirilmiş obje.
-// Bu sayede Context'ten gelen veriyle uyuşur.
 interface SavedSpreadType {
   id: string;
   name: string;
@@ -32,7 +40,7 @@ export interface ReadingHistoryItem {
   question: string;
   mood: string;
   cards: string[];
-  spreadType?: SavedSpreadType; // <-- GÜNCELLENDİ
+  spreadType?: SavedSpreadType;
   holisticInterpretation: string;
   cardDetails: CardDetail[];
   lifeAspects: LifeAspects;
@@ -47,190 +55,217 @@ export interface UserStats {
   totalReadings: number;
   favoriteReadings: number;
   streakDays: number;
-  mostUsedSpread: string;
-  lastReadingDate: string | null;
+  mostUsedSpread?: string;
+  lastReadingDate?: string | null;
 }
 
-const getAllReadingsRaw = async (): Promise<ReadingHistoryItem[]> => {
-  try {
-    const readings = await AsyncStorage.getItem(STORAGE_KEY);
-    return readings ? JSON.parse(readings) : [];
-  } catch (error) {
-    console.error('Ham veri okunamadı:', error);
-    return [];
-  }
-};
+// ========================================
+// MAPPING FUNCTIONS
+// ========================================
 
-export const saveReading = async (reading: Omit<ReadingHistoryItem, 'id' | 'createdAt' | 'isFavorite' | 'userId'>): Promise<void> => {
-  try {
-    const currentUser = auth.currentUser;
-    const currentUserId = currentUser ? currentUser.uid : 'guest';
+/**
+ * ReadingHistoryItem → FirestoreReading mapping
+ */
+function mapToFirestoreReading(
+  reading: Omit<ReadingHistoryItem, 'id' | 'createdAt' | 'isFavorite' | 'userId'>
+): Omit<FirestoreReading, 'id' | 'userId' | 'createdAt'> {
+  return {
+    question: reading.question,
+    cards: reading.cards,
+    spreadType: {
+      id: reading.spreadType?.id || 'classic',
+      name: reading.spreadType?.name || 'Classic',
+      positions: reading.spreadType?.cardCount || reading.cards.length,
+    },
+    holisticInterpretation: reading.holisticInterpretation,
+    cardDetails: reading.cardDetails.map((card) => ({
+      cardName: card.cardName,
+      position: card.position,
+      interpretation: `${card.meaning}\n\nTavsiye: ${card.advice}`,
+    })),
+    summary: reading.summary,
+    isFavorite: false,
+  };
+}
 
-    const existingReadings = await getAllReadingsRaw();
-    
-    const newReading: ReadingHistoryItem = {
-      ...reading,
-      id: Date.now().toString(),
-      userId: currentUserId,
-      createdAt: new Date().toISOString(),
-      isFavorite: false
-    };
-    
-    const updatedReadings = [newReading, ...existingReadings];
-    await AsyncStorage.setItem(STORAGE_KEY, JSON.stringify(updatedReadings));
+/**
+ * FirestoreReading → ReadingHistoryItem mapping (backwards compatibility)
+ */
+function mapFromFirestoreReading(firestoreReading: FirestoreReading): ReadingHistoryItem {
+  return {
+    id: firestoreReading.id,
+    userId: firestoreReading.userId,
+    question: firestoreReading.question,
+    mood: '', // Firestore'da mood yok, boş string döndür
+    cards: firestoreReading.cards,
+    spreadType: {
+      id: firestoreReading.spreadType.id,
+      name: firestoreReading.spreadType.name,
+      cardCount: firestoreReading.spreadType.positions,
+    },
+    holisticInterpretation: firestoreReading.holisticInterpretation,
+    cardDetails: firestoreReading.cardDetails.map((card) => {
+      // Interpretation'ı parse et (meaning + advice)
+      const parts = card.interpretation.split('\n\nTavsiye: ');
+      return {
+        cardName: card.cardName,
+        position: card.position,
+        meaning: parts[0] || card.interpretation,
+        advice: parts[1] || '',
+      };
+    }),
+    lifeAspects: {
+      love: '',
+      career: '',
+      personal: '',
+    }, // Firestore'da life aspects yok
+    summary: firestoreReading.summary,
+    confidence: 0, // Firestore'da confidence yok
+    readingTitle: '', // Firestore'da reading title yok
+    createdAt: firestoreReading.createdAt.toDate().toISOString(),
+    isFavorite: firestoreReading.isFavorite,
+  };
+}
+
+// ========================================
+// PUBLIC API (Eski API ile uyumlu)
+// ========================================
+
+/**
+ * Yeni okuma kaydet
+ */
+export const saveReading = async (
+  reading: Omit<ReadingHistoryItem, 'id' | 'createdAt' | 'isFavorite' | 'userId'>
+): Promise<void> => {
+  try {
+    const firestoreReading = mapToFirestoreReading(reading);
+    await firestoreService.saveReading(firestoreReading);
+    console.log('✅ Reading saved via readingHistoryService');
   } catch (error) {
-    console.error('Okuma kaydedilemedi:', error);
+    console.error('❌ Failed to save reading:', error);
     throw error;
   }
 };
 
+/**
+ * Kullanıcının tüm okumalarını getir
+ */
 export const getReadingHistory = async (): Promise<ReadingHistoryItem[]> => {
   try {
-    const allReadings = await getAllReadingsRaw();
-    const currentUser = auth.currentUser;
-    const currentUserId = currentUser ? currentUser.uid : 'guest';
-
-    return allReadings.filter(item => {
-      const itemOwner = item.userId || 'guest';
-      return itemOwner === currentUserId;
-    });
+    const firestoreReadings = await firestoreService.getReadingHistory();
+    return firestoreReadings.map(mapFromFirestoreReading);
   } catch (error) {
-    console.error('Okumalar alınamadı:', error);
+    console.error('❌ Failed to get reading history:', error);
     return [];
   }
 };
 
+/**
+ * Favori okumaları getir
+ */
 export const getFavoriteReadings = async (): Promise<ReadingHistoryItem[]> => {
   try {
-    const userReadings = await getReadingHistory();
-    return userReadings.filter(reading => reading.isFavorite);
+    const firestoreReadings = await firestoreService.getFavoriteReadings();
+    return firestoreReadings.map(mapFromFirestoreReading);
   } catch (error) {
-    console.error('Favori okumalar alınamadı:', error);
+    console.error('❌ Failed to get favorite readings:', error);
     return [];
   }
 };
 
+/**
+ * Favori durumunu toggle et
+ */
 export const toggleReadingFavorite = async (readingId: string): Promise<void> => {
   try {
-    const allReadings = await getAllReadingsRaw();
-    const updatedReadings = allReadings.map(reading => {
-      if (reading.id === readingId) {
-        return { ...reading, isFavorite: !reading.isFavorite };
-      }
-      return reading;
-    });
-    await AsyncStorage.setItem(STORAGE_KEY, JSON.stringify(updatedReadings));
+    // Mevcut reading'i al
+    const reading = await firestoreService.getReadingById(readingId);
+    if (!reading) {
+      throw new Error('Reading not found');
+    }
+
+    // Toggle
+    await firestoreService.toggleReadingFavorite(readingId, !reading.isFavorite);
+    console.log('✅ Reading favorite toggled');
   } catch (error) {
-    console.error('Favori durumu değiştirilemedi:', error);
+    console.error('❌ Failed to toggle favorite:', error);
     throw error;
   }
 };
 
+/**
+ * Okuma sil
+ */
 export const deleteReading = async (readingId: string): Promise<void> => {
   try {
-    const allReadings = await getAllReadingsRaw();
-    const filteredReadings = allReadings.filter(reading => reading.id !== readingId);
-    await AsyncStorage.setItem(STORAGE_KEY, JSON.stringify(filteredReadings));
+    await firestoreService.deleteReading(readingId);
+    console.log('✅ Reading deleted');
   } catch (error) {
-    console.error('Okuma silinemedi:', error);
+    console.error('❌ Failed to delete reading:', error);
     throw error;
   }
 };
 
+/**
+ * Kullanıcı istatistiklerini getir
+ */
 export const getUserStats = async (): Promise<UserStats> => {
   try {
-    const readings = await getReadingHistory();
-    
-    if (readings.length === 0) {
-      return {
-        totalReadings: 0,
-        favoriteReadings: 0,
-        streakDays: 0,
-        mostUsedSpread: 'Henüz okuma yok',
-        lastReadingDate: null
-      };
-    }
-    
-    const spreadCounts: Record<string, number> = {};
-    readings.forEach(reading => {
-      const spreadName = reading.spreadType?.name || 'Klasik';
-      spreadCounts[spreadName] = (spreadCounts[spreadName] || 0) + 1;
-    });
-    
-    const mostUsedSpread = Object.entries(spreadCounts)
-      .sort(([, a], [, b]) => b - a)[0][0];
-    
-    const today = new Date();
-    const lastReading = new Date(readings[0].createdAt);
-    const daysSinceLastReading = Math.floor((today.getTime() - lastReading.getTime()) / (1000 * 60 * 60 * 24));
-    
-    let streakDays = 0;
-    if (daysSinceLastReading <= 1) {
-      streakDays = 1;
-      for (let i = 1; i < readings.length; i++) {
-        const currentDate = new Date(readings[i].createdAt);
-        const prevDate = new Date(readings[i - 1].createdAt);
-        const daysDiff = Math.floor((prevDate.getTime() - currentDate.getTime()) / (1000 * 60 * 60 * 24));
-        if (daysDiff <= 1) {
-          streakDays++;
-        } else {
-          break;
-        }
+    const stats = await firestoreService.getUserStats();
+
+    // mostUsedSpread hesaplamak için readings'i al
+    const readings = await firestoreService.getReadingHistory(100);
+
+    let mostUsedSpread = 'Henüz okuma yok';
+    if (readings.length > 0) {
+      const spreadCounts: Record<string, number> = {};
+      readings.forEach((reading) => {
+        const spreadName = reading.spreadType?.name || 'Classic';
+        spreadCounts[spreadName] = (spreadCounts[spreadName] || 0) + 1;
+      });
+
+      const sortedSpreads = Object.entries(spreadCounts).sort(([, a], [, b]) => b - a);
+      if (sortedSpreads.length > 0) {
+        mostUsedSpread = sortedSpreads[0][0];
       }
     }
-    
+
     return {
-      totalReadings: readings.length,
-      favoriteReadings: readings.filter(r => r.isFavorite).length,
-      streakDays,
+      totalReadings: stats.totalReadings,
+      favoriteReadings: stats.favoriteReadings,
+      streakDays: stats.streakDays,
       mostUsedSpread,
-      lastReadingDate: readings[0]?.createdAt || null
+      lastReadingDate: stats.lastReadingDate || null,
     };
   } catch (error) {
-    console.error('İstatistikler alınamadı:', error);
+    console.error('❌ Failed to get user stats:', error);
     return {
       totalReadings: 0,
       favoriteReadings: 0,
       streakDays: 0,
       mostUsedSpread: 'Henüz okuma yok',
-      lastReadingDate: null
+      lastReadingDate: null,
     };
   }
 };
 
-export const migrateGuestDataToUser = async (): Promise<void> => {
+/**
+ * Tüm geçmişi temizle
+ */
+export const clearAllHistory = async (): Promise<void> => {
   try {
-    const currentUser = auth.currentUser;
-    if (!currentUser) return;
-
-    const allReadings = await getAllReadingsRaw();
-    const updatedReadings = allReadings.map(item => {
-      if (!item.userId || item.userId === 'guest') {
-        return { ...item, userId: currentUser.uid };
-      }
-      return item;
-    });
-
-    await AsyncStorage.setItem(STORAGE_KEY, JSON.stringify(updatedReadings));
+    await firestoreService.clearAllHistory();
+    console.log('✅ All history cleared');
   } catch (error) {
-    console.error('Veri taşıma hatası:', error);
+    console.error('❌ Failed to clear history:', error);
+    throw error;
   }
 };
 
-export const clearAllHistory = async (): Promise<void> => {
-  try {
-    const allReadings = await getAllReadingsRaw();
-    const currentUser = auth.currentUser;
-    const currentUserId = currentUser ? currentUser.uid : 'guest';
-
-    const readingsToKeep = allReadings.filter(item => {
-       const itemOwner = item.userId || 'guest';
-       return itemOwner !== currentUserId;
-    });
-
-    await AsyncStorage.setItem(STORAGE_KEY, JSON.stringify(readingsToKeep));
-  } catch (error) {
-    console.error('Geçmiş temizlenemedi:', error);
-    throw error;
-  }
+/**
+ * Guest data migration (artık kullanılmıyor, Firestore auth-based)
+ * Geriye uyumluluk için boş fonksiyon bırakıldı
+ */
+export const migrateGuestDataToUser = async (): Promise<void> => {
+  console.log('ℹ️  migrateGuestDataToUser deprecated - Firestore handles auth automatically');
 };

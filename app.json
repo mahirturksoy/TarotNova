@@ -12,11 +12,18 @@
       "resizeMode": "contain",
       "backgroundColor": "#1d112b"
     },
+    "notification": {
+      "icon": "./assets/nova-icon.png",
+      "color": "#d4af37",
+      "iosDisplayInForeground": true,
+      "androidMode": "default",
+      "androidCollapsedTitle": "TarotNova"
+    },
     "ios": {
       "supportsTablet": true,
       "bundleIdentifier": "com.mahirturksoy.tarotnova",
       "icon": "./assets/nova-icon.png",
-      "googleServicesFile": "./GoogleService-Info.plist",
+      "googleServicesFile": "./ios/TarotNova/GoogleService-Info.plist",
       "infoPlist": {
         "CFBundleURLTypes": [
           {
@@ -37,7 +44,7 @@
       "edgeToEdgeEnabled": true,
       "predictiveBackGestureEnabled": false,
       "package": "com.mahirturksoy.tarotnova",
-      "googleServicesFile": "./google-services.json"
+      "googleServicesFile": "./android/app/google-services.json"
     },
     "web": {
       "favicon": "./assets/favicon.png"
@@ -53,7 +60,15 @@
       ],
       "@react-native-firebase/app",
       "@react-native-firebase/auth",
-      "@react-native-google-signin/google-signin"
+      "@react-native-google-signin/google-signin",
+      [
+        "expo-notifications",
+        {
+          "icon": "./assets/nova-icon.png",
+          "color": "#d4af37"
+        }
+      ],
+      "react-native-purchases"
     ],
     "extra": {
       "eas": {

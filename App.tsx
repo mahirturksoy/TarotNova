@@ -13,6 +13,13 @@ import * as SplashScreen from 'expo-splash-screen';
 import './app/i18n';
 import { useTranslation } from 'react-i18next'; // <-- Hook eklendi
 
+// Services
+import revenueCatService from './app/services/revenueCatService';
+import notificationService from './app/services/notificationService';
+import firestoreService from './app/services/firestoreService';
+import { auth } from './app/config/firebaseConfig';
+import { onAuthStateChanged } from 'firebase/auth';
+
 // Context
 import { ReadingProvider } from './app/context/ReadingContext';
 
@@ -64,8 +71,8 @@ const MainTabNavigator = () => {
   const { t } = useTranslation();
 
   return (
-    <Tab.Navigator screenOptions={({ route }) => ({
-        tabBarIcon: ({ focused }) => <TabIcon name={route.name} focused={focused} />,
+    <Tab.Navigator screenOptions={({ route }: { route: { name: string } }) => ({
+        tabBarIcon: ({ focused }: { focused: boolean }) => <TabIcon name={route.name} focused={focused} />,
         tabBarActiveTintColor: '#d4af37',
         tabBarInactiveTintColor: '#a8a29e',
         tabBarStyle: { backgroundColor: '#1d112b', borderTopWidth: 1, borderTopColor: '#4a044e', height: 85, paddingBottom: 25, paddingTop: 10, position: 'absolute', bottom: 0, left: 0, right: 0, elevation: 0 },
@@ -87,16 +94,59 @@ const App: React.FC = () => {
   const { t } = useTranslation(); // <-- App seviyesinde çeviri
 
   useEffect(() => {
+    let authUnsubscribe: (() => void) | undefined;
+    let notificationCleanup: (() => void) | undefined;
+
     async function prepare() {
       try {
+        // RevenueCat'i başlat
+        console.log('🚀 Initializing RevenueCat...');
+        await revenueCatService.initialize();
+
+        // Auth listener: Kullanıcı değiştiğinde RevenueCat'e bildir
+        authUnsubscribe = onAuthStateChanged(auth, async (user) => {
+          console.log('👤 Auth state changed:', user?.uid || 'logged out');
+          await revenueCatService.syncUser(user?.uid || null);
+        });
+
+        // Notification listener'ları kur
+        console.log('🔔 Setting up notification listeners...');
+        notificationCleanup = notificationService.setupNotificationListeners(
+          (notification) => {
+            console.log('📩 Notification received:', notification.request.content);
+          },
+          (response) => {
+            console.log('👆 Notification tapped:', response.notification.request.content);
+            // İleride: Bildirime tıklandığında navigation yapılabilir
+          }
+        );
+
+        // AsyncStorage → Firestore migration (tek seferlik)
+        console.log('🔄 Checking for Firestore migration...');
+        await firestoreService.migrateAsyncStorageToFirestore();
+
+        // Splash delay
         await new Promise(resolve => setTimeout(resolve, 1000));
       } catch (e) {
-        console.warn(e);
+        console.warn('❌ App initialization error:', e);
       } finally {
         setAppIsReady(true);
       }
     }
+
     prepare();
+
+    // Cleanup function
+    return () => {
+      if (authUnsubscribe) {
+        console.log('🧹 Cleaning up auth listener');
+        authUnsubscribe();
+      }
+      if (notificationCleanup) {
+        console.log('🧹 Cleaning up notification listeners');
+        notificationCleanup();
+      }
+    };
   }, []);
 
   const onLayoutRootView = useCallback(async () => {

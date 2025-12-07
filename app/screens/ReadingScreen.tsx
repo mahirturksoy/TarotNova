@@ -113,11 +113,11 @@ const ReadingScreen: React.FC = () => {
   };
 
   const handleNewReading = () => {
-    navigation.navigate("Main", { screen: "Ana Sayfa" } as any);
+    navigation.navigate("Main", { screen: "Ana Sayfa" });
   };
 
   const handleViewHistory = () => {
-    navigation.navigate("Main", { screen: "Geçmiş" } as any);
+    navigation.navigate("Main", { screen: "Geçmiş" });
   };
 
   if (isLoading || !currentReading) {

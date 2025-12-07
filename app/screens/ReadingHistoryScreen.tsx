@@ -205,9 +205,9 @@ const ReadingHistoryScreen: React.FC = () => {
       <Text style={styles.emptyStateTitle}>{t('history.empty.title')}</Text>
       <Text style={styles.emptyStateText}>{t('history.empty.subtitle')}</Text>
       
-      <TouchableOpacity 
-        style={styles.ctaButton} 
-        onPress={() => navigation.navigate('Main', { screen: 'Ana Sayfa' } as any)}
+      <TouchableOpacity
+        style={styles.ctaButton}
+        onPress={() => navigation.navigate('Main', { screen: 'Ana Sayfa' })}
         activeOpacity={0.8}
       >
         <LinearGradient colors={['#d4af37', '#F59E0B']} style={styles.ctaGradient}>

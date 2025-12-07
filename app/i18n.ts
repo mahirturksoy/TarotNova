@@ -1,6 +1,6 @@
 // app/i18n.ts
 
-import i18n from 'i18next';
+import { createInstance } from 'i18next';
 import { initReactI18next } from 'react-i18next';
 import * as Localization from 'expo-localization';
 import AsyncStorage from '@react-native-async-storage/async-storage';
@@ -13,6 +13,8 @@ const resources = {
   tr: { translation: tr },
   en: { translation: en },
 };
+
+const i18n = createInstance();
 
 const initI18n = async () => {
   let savedLanguage = await AsyncStorage.getItem('user-language');

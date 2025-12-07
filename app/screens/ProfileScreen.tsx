@@ -7,24 +7,25 @@ import { useNavigation, useFocusEffect, CompositeNavigationProp } from '@react-n
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { auth } from '../config/firebaseConfig';
 import { onAuthStateChanged, User, signOut } from 'firebase/auth';
-import { getUserStats, clearAllHistory } from '../services/readingHistoryService';
+import { getUserStats, clearAllHistory, UserStats } from '../services/readingHistoryService';
 import MysticConfirmationModal from '../components/MysticConfirmationModal';
 import MysticInfoModal from '../components/MysticInfoModal';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { BottomTabNavigationProp } from '@react-navigation/bottom-tabs';
 import { RootStackParamList, TabParamList } from '../types/navigation';
 import { useTranslation } from 'react-i18next';
+import notificationService from '../services/notificationService';
 
 interface UserPreferences { notifications: boolean; dailyReminder: boolean; autoSave: boolean; }
 
-const CustomToggle = ({ value, onValueChange }: { value: boolean, onValueChange: () => void }) => {
+const CustomToggle = ({ value, onValueChange, disabled = false }: { value: boolean, onValueChange: () => void, disabled?: boolean }) => {
   const animatedValue = useRef(new Animated.Value(value ? 1 : 0)).current;
   useEffect(() => { Animated.timing(animatedValue, { toValue: value ? 1 : 0, duration: 300, easing: Easing.bezier(0.34, 1.56, 0.64, 1), useNativeDriver: false, }).start(); }, [value]);
   const translateX = animatedValue.interpolate({ inputRange: [0, 1], outputRange: [2, 22] });
   const trackBackgroundColor = animatedValue.interpolate({ inputRange: [0, 1], outputRange: ['rgba(0,0,0,0.2)', '#d4af37'] });
   const iconColor = value ? '#1d112b' : '#d4af37';
   return (
-    <TouchableOpacity onPress={onValueChange} activeOpacity={0.9}>
+    <TouchableOpacity onPress={onValueChange} activeOpacity={disabled ? 1 : 0.9} disabled={disabled} style={{ opacity: disabled ? 0.3 : 1 }}>
       <Animated.View style={[styles.toggleTrack, { backgroundColor: trackBackgroundColor }]}><Animated.View style={[styles.toggleThumb, { transform: [{ translateX }] }]} /><View style={styles.toggleIconContainer}><Text style={[styles.toggleIcon, { color: iconColor }]}>☾</Text><Text style={[styles.toggleIcon, { color: iconColor }]}>☀️</Text></View></Animated.View>
     </TouchableOpacity>
   );
@@ -36,7 +37,7 @@ const ProfileScreen: React.FC = () => {
   const navigation = useNavigation<ProfileScreenNavigationProp>();
   const { t, i18n } = useTranslation();
   const [user, setUser] = useState<User | null>(auth.currentUser);
-  const [userStats, setUserStats] = useState<any>(null);
+  const [userStats, setUserStats] = useState<UserStats | null>(null);
   const [preferences, setPreferences] = useState<UserPreferences>({ notifications: true, dailyReminder: true, autoSave: true });
   
   // Modal State Yönetimi
@@ -45,10 +46,59 @@ const ProfileScreen: React.FC = () => {
   useEffect(() => { const unsubscribe = onAuthStateChanged(auth, (currentUser) => { setUser(currentUser); }); return () => unsubscribe(); }, []);
   useFocusEffect(useCallback(() => { loadUserData(); loadPreferences(); }, []));
 
+  // Bildirim izinlerini kayıt et (Component mount olduğunda)
+  useEffect(() => {
+    registerNotifications();
+  }, []);
+
+  const registerNotifications = async () => {
+    try {
+      const token = await notificationService.registerForPushNotifications();
+      if (token) {
+        console.log('✅ ProfileScreen: Push notifications registered');
+      }
+    } catch (error) {
+      console.error('❌ ProfileScreen: Failed to register notifications:', error);
+    }
+  };
+
   const loadUserData = async () => { const stats = await getUserStats(); setUserStats(stats); };
   const loadPreferences = async () => { const savedPrefs = await AsyncStorage.getItem('@user_preferences'); if (savedPrefs) setPreferences(JSON.parse(savedPrefs)); };
   const savePreferences = async (newPrefs: UserPreferences) => { await AsyncStorage.setItem('@user_preferences', JSON.stringify(newPrefs)); setPreferences(newPrefs); };
-  const handlePreferenceChange = (key: keyof UserPreferences) => { const newPrefs = { ...preferences, [key]: !preferences[key] }; savePreferences(newPrefs); };
+
+  const handlePreferenceChange = async (key: keyof UserPreferences) => {
+    // Bildirimler kapalıysa dailyReminder toggle'ı yapılamaz
+    if (key === 'dailyReminder' && !preferences.notifications) {
+      console.warn('⚠️ Cannot toggle daily reminder when notifications are disabled');
+      return;
+    }
+
+    const newPrefs = { ...preferences, [key]: !preferences[key] };
+
+    // Bildirimler kapatıldıysa dailyReminder'ı da kapat
+    if (key === 'notifications' && !newPrefs.notifications) {
+      newPrefs.dailyReminder = false;
+    }
+
+    await savePreferences(newPrefs);
+
+    // Bildirim tercihlerine göre aksiyon al
+    if (key === 'dailyReminder') {
+      await notificationService.scheduleDailyReminder(newPrefs.dailyReminder);
+    }
+
+    if (key === 'notifications') {
+      if (!newPrefs.notifications) {
+        // Bildirimler kapatıldıysa tüm zamanlanmış bildirimleri iptal et
+        await notificationService.cancelAllNotifications();
+      } else {
+        // Bildirimler tekrar açıldıysa ve dailyReminder true ise, tekrar zamanla
+        if (newPrefs.dailyReminder) {
+          await notificationService.scheduleDailyReminder(true);
+        }
+      }
+    }
+  };
   
   const confirmClearHistory = async () => { try { await clearAllHistory(); await loadUserData(); setModalType('none'); } catch (error) { setModalType('none'); } };
   const handleSignOut = async () => { try { await signOut(auth); } catch (error) { console.error("Çıkış hatası:", error); } };
@@ -86,7 +136,7 @@ const ProfileScreen: React.FC = () => {
           
           <View style={styles.section}><Text style={styles.sectionTitle}>{t('profile.preferences.title')}</Text><View style={styles.ritualContainer}>
             <View style={styles.ritualRow}><View style={styles.ritualInfo}><Text style={styles.ritualSymbol}>◎</Text><View style={styles.ritualTextContainer}><Text style={styles.ritualLabel}>{t('profile.preferences.notifications')}</Text><Text style={styles.ritualDescription}>{t('profile.preferences.notificationsDesc')}</Text></View></View><View style={styles.toggleContainer}><CustomToggle value={preferences.notifications} onValueChange={() => handlePreferenceChange('notifications')} /></View></View>
-            <View style={styles.ritualRow}><View style={styles.ritualInfo}><Text style={styles.ritualSymbol}>☾</Text><View style={styles.ritualTextContainer}><Text style={styles.ritualLabel}>{t('profile.preferences.reminder')}</Text><Text style={styles.ritualDescription}>{t('profile.preferences.reminderDesc')}</Text></View></View><View style={styles.toggleContainer}><CustomToggle value={preferences.dailyReminder} onValueChange={() => handlePreferenceChange('dailyReminder')} /></View></View>
+            <View style={styles.ritualRow}><View style={styles.ritualInfo}><Text style={styles.ritualSymbol}>☾</Text><View style={styles.ritualTextContainer}><Text style={styles.ritualLabel}>{t('profile.preferences.reminder')}</Text><Text style={styles.ritualDescription}>{t('profile.preferences.reminderDesc')}</Text></View></View><View style={styles.toggleContainer}><CustomToggle value={preferences.dailyReminder} onValueChange={() => handlePreferenceChange('dailyReminder')} disabled={!preferences.notifications} /></View></View>
             <View style={styles.ritualRow}><View style={styles.ritualInfo}><Text style={styles.ritualSymbol}>⊕</Text><View style={styles.ritualTextContainer}><Text style={styles.ritualLabel}>{t('profile.preferences.autoSave')}</Text><Text style={styles.ritualDescription}>{t('profile.preferences.autoSaveDesc')}</Text></View></View><View style={styles.toggleContainer}><CustomToggle value={preferences.autoSave} onValueChange={() => handlePreferenceChange('autoSave')} /></View></View>
             
             {/* DİL DEĞİŞTİRME BUTONU - Omega İkonu ile */}
@@ -107,7 +157,7 @@ const ProfileScreen: React.FC = () => {
                 <TouchableOpacity style={[styles.accountRow, { borderBottomWidth: 0 }]} activeOpacity={0.7} onPress={() => setModalType('delete')}><View style={styles.ritualInfo}><Text style={[styles.ritualSymbol, {color: '#EF4444'}]}>✕</Text><Text style={[styles.ritualLabel, {color: '#EF4444'}]}>{t('profile.account.deleteData')}</Text></View><Text style={styles.ritualArrow}>›</Text></TouchableOpacity>
           </View></View>
           
-          <TouchableOpacity style={styles.premiumCard} activeOpacity={0.8} onPress={() => navigation.navigate('Premium' as any)}>
+          <TouchableOpacity style={styles.premiumCard} activeOpacity={0.8} onPress={() => navigation.navigate('Premium')}>
             <LinearGradient colors={['#d4af37', '#F59E0B']} style={styles.premiumGradient}>
                 <View><Text style={styles.premiumTitle}>{t('profile.premiumCard.title')}</Text><Text style={styles.premiumDescription}>{t('profile.premiumCard.desc')}</Text></View><Text style={styles.premiumLabel}>{t('profile.premiumCard.badge')}</Text>
             </LinearGradient>

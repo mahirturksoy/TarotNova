@@ -1,6 +1,6 @@
 // app/screens/SpreadSelectionScreen.tsx
 
-import React, { useState } from 'react';
+import React, { useState, useCallback } from 'react';
 import {
   View,
   Text,
@@ -10,7 +10,7 @@ import {
   Platform
 } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
-import { useNavigation, useRoute } from '@react-navigation/native';
+import { useNavigation, useRoute, useFocusEffect } from '@react-navigation/native';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { useTranslation } from 'react-i18next'; // <-- Çeviri
 
@@ -18,6 +18,7 @@ import { SPREAD_TYPES, SPREAD_CATEGORIES } from '../constants/spreadTypes';
 import type { RootStackParamList } from '../types/navigation';
 import type { SpreadType, SpreadCategory } from '../constants/spreadTypes';
 import MysticPremiumModal from '../components/MysticPremiumModal';
+import purchaseService from '../services/purchaseService';
 
 type SpreadSelectionScreenNavigationProp = NativeStackNavigationProp<RootStackParamList, 'SpreadSelection'>;
 
@@ -35,8 +36,24 @@ const SpreadSelectionScreen: React.FC = () => {
   const [selectedCategory, setSelectedCategory] = useState<SpreadCategory>('general');
   const [premiumModalVisible, setPremiumModalVisible] = useState(false);
   const [selectedPremiumSpread, setSelectedPremiumSpread] = useState<string>('');
+  const [isUserPremium, setIsUserPremium] = useState(false);
 
-  const isUserPremium = false; 
+  // Her ekrana gelindiğinde premium durumunu kontrol et
+  useFocusEffect(
+    useCallback(() => {
+      checkPremium();
+    }, [])
+  );
+
+  const checkPremium = async () => {
+    try {
+      const isPremium = await purchaseService.checkPremiumStatus();
+      setIsUserPremium(isPremium);
+    } catch (error) {
+      console.error('Premium status check failed:', error);
+      setIsUserPremium(false);
+    }
+  }; 
 
   // --- ÇEVİRİ YARDIMCILARI ---
   // Sabit veriyi değil, JSON'daki çeviriyi alıyoruz

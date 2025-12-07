@@ -2,8 +2,13 @@
 
 import i18n from '../i18n'; 
 
-// Anahtarı buraya tırnak içine yapıştır.
-const GEMINI_API_KEY = "AIzaSyA-Z1nDHGbF3nDeT4lav_UEO38h_Q1DzOw";
+// Güvenlik için API key .env dosyasından alınıyor
+const GEMINI_API_KEY = process.env.EXPO_PUBLIC_GEMINI_API_KEY;
+
+if (!GEMINI_API_KEY) {
+  console.error('❌ Gemini API key missing! Check .env file');
+  throw new Error('EXPO_PUBLIC_GEMINI_API_KEY not configured in .env');
+}
 
 interface ReadingPayload {
   question: string;
