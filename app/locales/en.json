@@ -11,7 +11,8 @@
     "close": "Close",
     "ok": "OK",
     "continue": "Continue",
-    "back": "Back"
+    "back": "Back",
+    "warning": "Warning"
   },
   "tab": {
     "home": "Home",
@@ -140,6 +141,7 @@
     "meaning": "Meaning",
     "advice": "Advice",
     "newReading": "New Reading",
+    "loginRequired": "You need to login to save your reading.",
     "modalSaved": {
       "title": "Saved",
       "subtitle": "This reading is now shining in your history."

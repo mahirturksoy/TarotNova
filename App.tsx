@@ -18,7 +18,6 @@ import revenueCatService from './app/services/revenueCatService';
 import notificationService from './app/services/notificationService';
 import firestoreService from './app/services/firestoreService';
 import { auth } from './app/config/firebaseConfig';
-import { onAuthStateChanged } from 'firebase/auth';
 
 // Context
 import { ReadingProvider } from './app/context/ReadingContext';
@@ -103,8 +102,8 @@ const App: React.FC = () => {
         console.log('🚀 Initializing RevenueCat...');
         await revenueCatService.initialize();
 
-        // Auth listener: Kullanıcı değiştiğinde RevenueCat'e bildir
-        authUnsubscribe = onAuthStateChanged(auth, async (user) => {
+        // Auth listener: Kullanıcı değiştiğinde RevenueCat'e bildir (native SDK)
+        authUnsubscribe = auth.onAuthStateChanged(async (user) => {
           console.log('👤 Auth state changed:', user?.uid || 'logged out');
           await revenueCatService.syncUser(user?.uid || null);
         });

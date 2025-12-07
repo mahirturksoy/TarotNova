@@ -9,7 +9,6 @@ import {
   TouchableOpacity,
   ActivityIndicator,
   Platform,
-  Alert,
 } from "react-native";
 import { LinearGradient } from "expo-linear-gradient";
 import {
@@ -26,6 +25,8 @@ import { saveReading } from "../services/readingHistoryService";
 import type { RootStackParamList, TabParamList } from "../types/navigation";
 import ReadingDisplay from "../components/ReadingDisplay";
 import MysticSuccessModal from "../components/MysticSuccessModal";
+import MysticAuthModal from "../components/MysticAuthModal";
+import { auth } from "../config/firebaseConfig";
 
 type ReadingScreenNavigationProp = CompositeNavigationProp<
   NativeStackNavigationProp<RootStackParamList, "Reading">,
@@ -45,6 +46,7 @@ const ReadingScreen: React.FC = () => {
   const [isSaving, setIsSaving] = useState(false);
   const [readingSaved, setReadingSaved] = useState(false);
   const [isSuccessModalVisible, setSuccessModalVisible] = useState(false);
+  const [isAuthModalVisible, setAuthModalVisible] = useState(false);
 
   useEffect(() => {
     checkAutoSave();
@@ -71,6 +73,12 @@ const ReadingScreen: React.FC = () => {
 
   const handleSaveReading = async () => {
     if (!currentReading || !holisticInterpretation || readingSaved) return;
+
+    // Kullanıcı giriş yapmamışsa uyarı göster
+    if (!auth.currentUser) {
+      setAuthModalVisible(true);
+      return;
+    }
 
     setIsSaving(true);
     try {
@@ -194,6 +202,19 @@ const ReadingScreen: React.FC = () => {
         visible={isSuccessModalVisible}
         title={t('reading.modalSaved.title')}
         subtitle={t('reading.modalSaved.subtitle')}
+      />
+
+      <MysticAuthModal
+        visible={isAuthModalVisible}
+        title={t('common.warning') || 'Uyarı'}
+        message={t('reading.loginRequired') || 'Okumayı kaydetmek için giriş yapmanız gerekmektedir.'}
+        onCancel={() => setAuthModalVisible(false)}
+        onLogin={() => {
+          setAuthModalVisible(false);
+          navigation.navigate('Auth');
+        }}
+        cancelText={t('common.cancel') || 'İptal'}
+        loginText={t('auth.login') || 'Giriş Yap'}
       />
     </>
   );

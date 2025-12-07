@@ -1,14 +1,8 @@
 // app/services/authService.ts
 
-import { 
-  signInWithEmailAndPassword, 
-  createUserWithEmailAndPassword, 
-  signInWithCredential, 
-  GoogleAuthProvider,
-  UserCredential 
-} from 'firebase/auth';
 import { GoogleSignin } from '@react-native-google-signin/google-signin';
 import { auth } from '../config/firebaseConfig';
+import { FirebaseAuthTypes } from '@react-native-firebase/auth';
 
 // Hata Tipi Tanımı
 export interface AuthError {
@@ -24,42 +18,42 @@ GoogleSignin.configure({
 });
 
 // E-posta ile Giriş
-export const signInWithEmail = async (email: string, pass: string): Promise<UserCredential> => {
+export const signInWithEmail = async (email: string, pass: string): Promise<FirebaseAuthTypes.UserCredential> => {
   try {
-    return await signInWithEmailAndPassword(auth, email, pass);
+    return await auth.signInWithEmailAndPassword(email, pass);
   } catch (error: unknown) {
     throw formatAuthError(error);
   }
 };
 
 // E-posta ile Kayıt
-export const signUpWithEmail = async (email: string, pass: string): Promise<UserCredential> => {
+export const signUpWithEmail = async (email: string, pass: string): Promise<FirebaseAuthTypes.UserCredential> => {
   try {
-    return await createUserWithEmailAndPassword(auth, email, pass);
+    return await auth.createUserWithEmailAndPassword(email, pass);
   } catch (error: unknown) {
     throw formatAuthError(error);
   }
 };
 
 // Google ile Giriş
-export const signInWithGoogle = async (): Promise<UserCredential | null> => {
+export const signInWithGoogle = async (): Promise<FirebaseAuthTypes.UserCredential | null> => {
   try {
     // Cihazda Google Play Services var mı kontrol et
     await GoogleSignin.hasPlayServices();
-    
+
     // Google'dan giriş yap ve token al
     const userInfo = await GoogleSignin.signIn();
-    
+
     // Eğer idToken yoksa (nadiren olur) hata fırlat
     if (!userInfo.data?.idToken) {
         throw new Error('Google Sign-In failed: No idToken received');
     }
 
-    // Token ile Firebase Credential oluştur
-    const googleCredential = GoogleAuthProvider.credential(userInfo.data.idToken);
+    // Token ile Firebase Credential oluştur (native SDK)
+    const googleCredential = auth.GoogleAuthProvider.credential(userInfo.data.idToken);
 
-    // Firebase'e giriş yap
-    return await signInWithCredential(auth, googleCredential);
+    // Firebase'e giriş yap (native SDK)
+    return await auth.signInWithCredential(googleCredential);
   } catch (error: unknown) {
     // Kullanıcı iptal ettiyse sessizce dön
     if (error && typeof error === 'object' && 'code' in error &&

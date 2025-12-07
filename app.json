@@ -67,8 +67,7 @@
           "icon": "./assets/nova-icon.png",
           "color": "#d4af37"
         }
-      ],
-      "react-native-purchases"
+      ]
     ],
     "extra": {
       "eas": {

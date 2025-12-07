@@ -11,7 +11,8 @@
     "close": "Kapat",
     "ok": "Tamam",
     "continue": "Devam Et",
-    "back": "Geri"
+    "back": "Geri",
+    "warning": "Uyarı"
   },
   "tab": {
     "home": "Ana Sayfa",
@@ -140,6 +141,7 @@
     "meaning": "Anlam",
     "advice": "Tavsiye",
     "newReading": "Yeni Okuma",
+    "loginRequired": "Okumayı kaydetmek için giriş yapmanız gerekmektedir.",
     "modalSaved": {
       "title": "Kaydedildi",
       "subtitle": "Bu okuma artık geçmişinizde parlıyor."

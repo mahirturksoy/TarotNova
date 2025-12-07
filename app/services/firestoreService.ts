@@ -1,23 +1,11 @@
 // app/services/firestoreService.ts
 
 import { auth, firestore } from '../config/firebaseConfig';
-import {
-  collection,
-  doc,
-  setDoc,
-  getDoc,
-  getDocs,
-  deleteDoc,
-  query,
-  where,
-  orderBy,
-  limit,
-  Timestamp,
-  writeBatch,
-  updateDoc,
-  increment,
-} from 'firebase/firestore';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import { FirebaseFirestoreTypes } from '@react-native-firebase/firestore';
+
+// React Native Firebase native SDK kullanıyoruz
+// Web SDK imports kaldırıldı
 
 // ========================================
 // TYPES & INTERFACES
@@ -40,7 +28,7 @@ export interface FirestoreReading {
     interpretation: string;
   }>;
   summary: string;
-  createdAt: Timestamp;
+  createdAt: FirebaseFirestoreTypes.Timestamp;
   isFavorite: boolean;
 }
 
@@ -91,19 +79,19 @@ class FirestoreService {
         throw new Error('User not authenticated');
       }
 
-      // Yeni reading ID oluştur
-      const readingId = doc(collection(firestore, this.COLLECTIONS.READINGS)).id;
+      // Yeni reading ID oluştur (native SDK)
+      const readingRef = firestore.collection(this.COLLECTIONS.READINGS).doc();
+      const readingId = readingRef.id;
 
       const readingData: FirestoreReading = {
         id: readingId,
         userId,
         ...reading,
-        createdAt: Timestamp.now(),
+        createdAt: firestore.FieldValue.serverTimestamp() as FirebaseFirestoreTypes.Timestamp,
       };
 
-      // Firestore'a kaydet
-      const readingRef = doc(firestore, this.COLLECTIONS.READINGS, readingId);
-      await setDoc(readingRef, readingData);
+      // Firestore'a kaydet (native SDK)
+      await readingRef.set(readingData);
 
       // User stats güncelle
       await this.incrementUserStats(userId, 'totalReadings');
@@ -129,17 +117,15 @@ class FirestoreService {
         return [];
       }
 
-      const readingsRef = collection(firestore, this.COLLECTIONS.READINGS);
-      const q = query(
-        readingsRef,
-        where('userId', '==', userId),
-        orderBy('createdAt', 'desc'),
-        limit(limitCount)
-      );
+      // Native SDK query
+      const querySnapshot = await firestore
+        .collection(this.COLLECTIONS.READINGS)
+        .where('userId', '==', userId)
+        .orderBy('createdAt', 'desc')
+        .limit(limitCount)
+        .get();
 
-      const querySnapshot = await getDocs(q);
       const readings: FirestoreReading[] = [];
-
       querySnapshot.forEach((doc) => {
         readings.push(doc.data() as FirestoreReading);
       });
@@ -404,9 +390,8 @@ class FirestoreService {
    */
   private async initializeUserDocument(userId: string): Promise<void> {
     try {
-      const userRef = doc(firestore, this.COLLECTIONS.USERS, userId);
-      await setDoc(
-        userRef,
+      // Native SDK kullanımı
+      await firestore.collection(this.COLLECTIONS.USERS).doc(userId).set(
         {
           uid: userId,
           stats: {
@@ -415,7 +400,7 @@ class FirestoreService {
             streakDays: 0,
             lastReadingDate: null,
           },
-          createdAt: Timestamp.now(),
+          createdAt: firestore.FieldValue.serverTimestamp(),
         },
         { merge: true }
       );
@@ -433,20 +418,19 @@ class FirestoreService {
    */
   private async incrementUserStats(userId: string, statKey: keyof UserStats): Promise<void> {
     try {
-      const userRef = doc(firestore, this.COLLECTIONS.USERS, userId);
-      const docSnap = await getDoc(userRef);
+      const userRef = firestore.collection(this.COLLECTIONS.USERS).doc(userId);
+      const docSnap = await userRef.get();
 
       // User document yoksa oluştur
-      if (!docSnap.exists()) {
+      if (!docSnap.exists) {
         await this.initializeUserDocument(userId);
       }
 
-      // Atomic increment kullan (race condition'ı önler)
-      await setDoc(
-        userRef,
+      // Atomic increment kullan (native SDK - race condition'ı önler)
+      await userRef.set(
         {
           stats: {
-            [statKey]: increment(1),
+            [statKey]: firestore.FieldValue.increment(1),
             lastReadingDate: new Date().toISOString(),
           },
         },
