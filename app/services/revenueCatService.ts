@@ -7,7 +7,7 @@ import Purchases, {
 import { Platform } from 'react-native';
 import { REVENUECAT_CONFIG } from '../config/revenueCatConfig';
 import { auth, firestore } from '../config/firebaseConfig';
-import { doc, setDoc, getDoc } from 'firebase/firestore';
+// Web SDK import kaldırıldı - Native SDK kullanılıyor
 
 class RevenueCatService {
   private isConfigured = false;
@@ -266,7 +266,8 @@ class RevenueCatService {
         return;
       }
 
-      const userRef = doc(firestore, 'users', currentUser.uid);
+      // Native SDK kullanımı
+      const userRef = firestore.collection('users').doc(currentUser.uid);
 
       // Premium bilgilerini hazırla
       const premiumData = {
@@ -279,7 +280,7 @@ class RevenueCatService {
       };
 
       // Firestore'a kaydet (merge: true ile mevcut data'yı koruyoruz)
-      await setDoc(userRef, {
+      await userRef.set({
         premium: premiumData,
       }, { merge: true });
 
@@ -301,12 +302,13 @@ class RevenueCatService {
         return false;
       }
 
-      const userRef = doc(firestore, 'users', currentUser.uid);
-      const docSnap = await getDoc(userRef);
+      // Native SDK kullanımı
+      const userRef = firestore.collection('users').doc(currentUser.uid);
+      const docSnap = await userRef.get();
+      const userData = docSnap.data();
 
-      if (docSnap.exists()) {
-        const data = docSnap.data();
-        const isPremium = data?.premium?.isPremium || false;
+      if (userData) {
+        const isPremium = userData?.premium?.isPremium || false;
 
         console.log('ℹ️  Premium status from Firestore:', isPremium);
         return isPremium;

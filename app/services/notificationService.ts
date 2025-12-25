@@ -3,7 +3,7 @@ import type { DailyTriggerInput } from 'expo-notifications';
 import * as Device from 'expo-device';
 import { Platform } from 'react-native';
 import { auth, firestore } from '../config/firebaseConfig';
-import { doc, setDoc } from 'firebase/firestore';
+// Web SDK import kaldırıldı - Native SDK kullanılıyor
 import Constants from 'expo-constants';
 import { NOTIFICATION_CONFIG } from '../config/notificationConfig';
 
@@ -128,10 +128,10 @@ class NotificationService {
         return;
       }
 
-      const userRef = doc(firestore, 'users', currentUser.uid);
+      // Native SDK kullanımı
+      const userRef = firestore.collection('users').doc(currentUser.uid);
 
-      await setDoc(
-        userRef,
+      await userRef.set(
         {
           notificationTokens: {
             [Platform.OS]: token,

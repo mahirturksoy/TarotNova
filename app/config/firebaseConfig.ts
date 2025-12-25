@@ -1,7 +1,8 @@
 // app/config/firebaseConfig.ts
 
 import auth from '@react-native-firebase/auth';
-import firestore from '@react-native-firebase/firestore';
+import firestoreModule from '@react-native-firebase/firestore';
+import type { FirebaseFirestoreTypes } from '@react-native-firebase/firestore';
 
 // React Native Firebase native SDK kullanıyoruz
 // GoogleService-Info.plist (iOS) ve google-services.json (Android) otomatik olarak okunur
@@ -9,8 +10,8 @@ import firestore from '@react-native-firebase/firestore';
 // Auth instance
 const authInstance = auth();
 
-// Firestore instance
-const firestoreInstance = firestore();
+// Firestore instance - doğru tipleme ile
+const firestoreInstance: FirebaseFirestoreTypes.Module = firestoreModule();
 
 export { authInstance as auth, firestoreInstance as firestore };
 

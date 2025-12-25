@@ -2,10 +2,10 @@
 
 import { auth, firestore } from '../config/firebaseConfig';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import { FirebaseFirestoreTypes } from '@react-native-firebase/firestore';
+import firestoreModule, { FirebaseFirestoreTypes } from '@react-native-firebase/firestore';
 
 // React Native Firebase native SDK kullanıyoruz
-// Web SDK imports kaldırıldı
+// FieldValue ve Timestamp doğrudan modülden alınıyor
 
 // ========================================
 // TYPES & INTERFACES
@@ -87,7 +87,7 @@ class FirestoreService {
         id: readingId,
         userId,
         ...reading,
-        createdAt: firestore.FieldValue.serverTimestamp() as FirebaseFirestoreTypes.Timestamp,
+        createdAt: firestoreModule.FieldValue.serverTimestamp() as FirebaseFirestoreTypes.Timestamp,
       };
 
       // Firestore'a kaydet (native SDK)
@@ -150,17 +150,15 @@ class FirestoreService {
         return [];
       }
 
-      const readingsRef = collection(firestore, this.COLLECTIONS.READINGS);
-      const q = query(
-        readingsRef,
-        where('userId', '==', userId),
-        where('isFavorite', '==', true),
-        orderBy('createdAt', 'desc')
-      );
+      // Native SDK query
+      const querySnapshot = await firestore
+        .collection(this.COLLECTIONS.READINGS)
+        .where('userId', '==', userId)
+        .where('isFavorite', '==', true)
+        .orderBy('createdAt', 'desc')
+        .get();
 
-      const querySnapshot = await getDocs(q);
       const favorites: FirestoreReading[] = [];
-
       querySnapshot.forEach((doc) => {
         favorites.push(doc.data() as FirestoreReading);
       });
@@ -186,15 +184,17 @@ class FirestoreService {
         return null;
       }
 
-      const readingRef = doc(firestore, this.COLLECTIONS.READINGS, readingId);
-      const docSnap = await getDoc(readingRef);
+      // Native SDK
+      const readingRef = firestore.collection(this.COLLECTIONS.READINGS).doc(readingId);
+      const docSnap = await readingRef.get();
+      const readingData = docSnap.data();
 
-      if (!docSnap.exists()) {
+      if (!readingData) {
         console.warn(`⚠️  Reading not found: ${readingId}`);
         return null;
       }
 
-      const reading = docSnap.data() as FirestoreReading;
+      const reading = readingData as FirestoreReading;
 
       // Authorization check: Verify reading belongs to current user
       if (reading.userId !== userId) {
@@ -230,9 +230,9 @@ class FirestoreService {
         throw new Error('Unauthorized: This reading belongs to another user');
       }
 
-      // Sil
-      const readingRef = doc(firestore, this.COLLECTIONS.READINGS, readingId);
-      await deleteDoc(readingRef);
+      // Sil (Native SDK)
+      const readingRef = firestore.collection(this.COLLECTIONS.READINGS).doc(readingId);
+      await readingRef.delete();
 
       // User stats güncelle
       await this.decrementUserStats(userId, 'totalReadings');
@@ -270,9 +270,9 @@ class FirestoreService {
         throw new Error('Unauthorized: This reading belongs to another user');
       }
 
-      // Favori durumunu güncelle
-      const readingRef = doc(firestore, this.COLLECTIONS.READINGS, readingId);
-      await updateDoc(readingRef, { isFavorite });
+      // Favori durumunu güncelle (Native SDK)
+      const readingRef = firestore.collection(this.COLLECTIONS.READINGS).doc(readingId);
+      await readingRef.update({ isFavorite });
 
       // User stats güncelle
       if (isFavorite) {
@@ -306,23 +306,21 @@ class FirestoreService {
         return;
       }
 
-      // Batch delete (Firestore max 500 operations per batch)
+      // Batch delete (Firestore max 500 operations per batch) - Native SDK
       const batchSize = 500;
-      const batches: Promise<void>[] = [];
 
       for (let i = 0; i < readings.length; i += batchSize) {
-        const batch = writeBatch(firestore);
+        const batch = firestore.batch();
         const chunk = readings.slice(i, i + batchSize);
 
         chunk.forEach((reading) => {
-          const readingRef = doc(firestore, this.COLLECTIONS.READINGS, reading.id);
+          const readingRef = firestore.collection(this.COLLECTIONS.READINGS).doc(reading.id);
           batch.delete(readingRef);
         });
 
-        batches.push(batch.commit());
+        await batch.commit();
+        console.log(`✅ Deleted batch: ${Math.min(i + batchSize, readings.length)}/${readings.length}`);
       }
-
-      await Promise.all(batches);
 
       // User stats sıfırla
       await this.resetUserStats(userId);
@@ -353,16 +351,17 @@ class FirestoreService {
         };
       }
 
-      const userRef = doc(firestore, this.COLLECTIONS.USERS, userId);
-      const docSnap = await getDoc(userRef);
+      // Native SDK
+      const userRef = firestore.collection(this.COLLECTIONS.USERS).doc(userId);
+      const docSnap = await userRef.get();
+      const userData = docSnap.data();
 
-      if (docSnap.exists()) {
-        const data = docSnap.data();
+      if (userData) {
         return {
-          totalReadings: data.stats?.totalReadings || 0,
-          favoriteReadings: data.stats?.favoriteReadings || 0,
-          streakDays: data.stats?.streakDays || 0,
-          lastReadingDate: data.stats?.lastReadingDate,
+          totalReadings: userData?.stats?.totalReadings || 0,
+          favoriteReadings: userData?.stats?.favoriteReadings || 0,
+          streakDays: userData?.stats?.streakDays || 0,
+          lastReadingDate: userData?.stats?.lastReadingDate,
         };
       }
 
@@ -400,7 +399,7 @@ class FirestoreService {
             streakDays: 0,
             lastReadingDate: null,
           },
-          createdAt: firestore.FieldValue.serverTimestamp(),
+          createdAt: firestoreModule.FieldValue.serverTimestamp(),
         },
         { merge: true }
       );
@@ -422,7 +421,7 @@ class FirestoreService {
       const docSnap = await userRef.get();
 
       // User document yoksa oluştur
-      if (!docSnap.exists) {
+      if (!docSnap.data()) {
         await this.initializeUserDocument(userId);
       }
 
@@ -430,7 +429,7 @@ class FirestoreService {
       await userRef.set(
         {
           stats: {
-            [statKey]: firestore.FieldValue.increment(1),
+            [statKey]: firestoreModule.FieldValue.increment(1),
             lastReadingDate: new Date().toISOString(),
           },
         },
@@ -450,21 +449,20 @@ class FirestoreService {
    */
   private async decrementUserStats(userId: string, statKey: keyof UserStats): Promise<void> {
     try {
-      const userRef = doc(firestore, this.COLLECTIONS.USERS, userId);
-      const docSnap = await getDoc(userRef);
+      // Native SDK
+      const userRef = firestore.collection(this.COLLECTIONS.USERS).doc(userId);
+      const docSnap = await userRef.get();
 
-      if (!docSnap.exists()) {
+      if (!docSnap.data()) {
         console.warn('⚠️ User document does not exist, cannot decrement stats');
         return;
       }
 
       // Atomic decrement kullan (race condition'ı önler)
-      // Not: Firestore increment(-1) negatif değerlere izin verir, bu yüzden kontrol gerekebilir
-      await setDoc(
-        userRef,
+      await userRef.set(
         {
           stats: {
-            [statKey]: increment(-1),
+            [statKey]: firestoreModule.FieldValue.increment(-1),
           },
         },
         { merge: true }
@@ -482,9 +480,9 @@ class FirestoreService {
    */
   private async resetUserStats(userId: string): Promise<void> {
     try {
-      const userRef = doc(firestore, this.COLLECTIONS.USERS, userId);
-      await setDoc(
-        userRef,
+      // Native SDK
+      const userRef = firestore.collection(this.COLLECTIONS.USERS).doc(userId);
+      await userRef.set(
         {
           stats: {
             totalReadings: 0,
@@ -518,9 +516,9 @@ class FirestoreService {
         return;
       }
 
-      // Migration flag kontrolü (Firestore'dan)
-      const userRef = doc(firestore, this.COLLECTIONS.USERS, userId);
-      const userDoc = await getDoc(userRef);
+      // Migration flag kontrolü (Firestore'dan) - Native SDK
+      const userRef = firestore.collection(this.COLLECTIONS.USERS).doc(userId);
+      const userDoc = await userRef.get();
       const migrationStatus = userDoc.data()?.migrationCompleted;
 
       if (migrationStatus === true) {
@@ -534,7 +532,7 @@ class FirestoreService {
 
       if (asyncMigrationDone === 'true') {
         console.log('ℹ️  Migration already done (AsyncStorage flag), updating Firestore...');
-        await setDoc(userRef, { migrationCompleted: true, migratedAt: new Date().toISOString() }, { merge: true });
+        await userRef.set({ migrationCompleted: true, migratedAt: new Date().toISOString() }, { merge: true });
         return;
       }
 
@@ -557,13 +555,13 @@ class FirestoreService {
 
       console.log(`📦 Found ${asyncReadings.length} readings in AsyncStorage`);
 
-      // Batch ile Firestore'a kaydet
-      let batch = writeBatch(firestore);
+      // Batch ile Firestore'a kaydet - Native SDK
+      let batch = firestore.batch();
       let migratedCount = 0;
 
       for (const reading of asyncReadings) {
         try {
-          const readingId = reading.id || doc(collection(firestore, this.COLLECTIONS.READINGS)).id;
+          const readingId = reading.id || firestore.collection(this.COLLECTIONS.READINGS).doc().id;
 
           const firestoreReading: FirestoreReading = {
             id: readingId,
@@ -575,19 +573,19 @@ class FirestoreService {
             cardDetails: reading.cardDetails || [],
             summary: reading.summary || '',
             createdAt: reading.timestamp
-              ? Timestamp.fromMillis(reading.timestamp)
-              : Timestamp.now(),
+              ? firestoreModule.Timestamp.fromMillis(reading.timestamp)
+              : firestoreModule.Timestamp.now(),
             isFavorite: reading.isFavorite || false,
           };
 
-          const readingRef = doc(firestore, this.COLLECTIONS.READINGS, readingId);
+          const readingRef = firestore.collection(this.COLLECTIONS.READINGS).doc(readingId);
           batch.set(readingRef, firestoreReading);
           migratedCount++;
 
           // Firestore batch limit (500 operations)
           if (migratedCount % 500 === 0) {
             await batch.commit();
-            batch = writeBatch(firestore); // Yeni batch oluştur
+            batch = firestore.batch(); // Yeni batch oluştur
             console.log(`✅ Migrated ${migratedCount} readings...`);
           }
         } catch (error) {
@@ -603,7 +601,7 @@ class FirestoreService {
       console.log(`✅ Migration completed: ${migratedCount} readings migrated`);
 
       // Migration flag'i Firestore'a kaydet
-      await setDoc(userRef, {
+      await userRef.set({
         migrationCompleted: true,
         migratedAt: new Date().toISOString()
       }, { merge: true });
@@ -627,9 +625,9 @@ class FirestoreService {
       const readings = await this.getReadingHistory(1000);
       const favoriteCount = readings.filter((r) => r.isFavorite).length;
 
-      const userRef = doc(firestore, this.COLLECTIONS.USERS, userId);
-      await setDoc(
-        userRef,
+      // Native SDK
+      const userRef = firestore.collection(this.COLLECTIONS.USERS).doc(userId);
+      await userRef.set(
         {
           stats: {
             totalReadings: readings.length,
@@ -669,15 +667,16 @@ class FirestoreService {
         };
       }
 
-      const userRef = doc(firestore, this.COLLECTIONS.USERS, userId);
-      const docSnap = await getDoc(userRef);
+      // Native SDK
+      const userRef = firestore.collection(this.COLLECTIONS.USERS).doc(userId);
+      const docSnap = await userRef.get();
+      const userData = docSnap.data();
 
-      if (docSnap.exists()) {
-        const data = docSnap.data();
+      if (userData) {
         return {
-          notifications: data.preferences?.notifications ?? true,
-          dailyReminder: data.preferences?.dailyReminder ?? true,
-          autoSave: data.preferences?.autoSave ?? true,
+          notifications: userData?.preferences?.notifications ?? true,
+          dailyReminder: userData?.preferences?.dailyReminder ?? true,
+          autoSave: userData?.preferences?.autoSave ?? true,
         };
       }
 
@@ -707,9 +706,9 @@ class FirestoreService {
         throw new Error('User not authenticated');
       }
 
-      const userRef = doc(firestore, this.COLLECTIONS.USERS, userId);
-      await setDoc(
-        userRef,
+      // Native SDK
+      const userRef = firestore.collection(this.COLLECTIONS.USERS).doc(userId);
+      await userRef.set(
         {
           preferences: {
             ...preferences,
