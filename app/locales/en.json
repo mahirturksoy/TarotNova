@@ -67,6 +67,7 @@
     "account": {
       "title": "Account",
       "about": "About",
+      "terms": "Terms of Use",
       "privacy": "Privacy Policy",
       "logout": "Log Out",
       "deleteData": "Delete All Data"
@@ -202,7 +203,8 @@
     },
     "btn": "Get Premium",
     "price": "₺50.00 / Month",
-    "notNow": "Not Now"
+    "notNow": "Not Now",
+    "legalNotice": "By subscribing, you agree to our Terms of Use and Privacy Policy."
   },
   "legal": {
     "aboutTitle": "About TarotNova",

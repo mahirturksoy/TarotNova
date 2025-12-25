@@ -181,6 +181,8 @@ const PremiumScreen: React.FC = () => {
           </Text>
         </TouchableOpacity>
 
+        <Text style={styles.legalNoticeText}>{t('premium.legalNotice')}</Text>
+
         <TouchableOpacity style={styles.closeButton} onPress={() => navigation.goBack()}>
           <Text style={styles.closeButtonText}>{t('premium.notNow')}</Text>
         </TouchableOpacity>
@@ -313,6 +315,16 @@ const styles = StyleSheet.create({
     fontFamily: Platform.select({ ios: 'Georgia', android: 'serif' }),
     textDecorationLine: 'underline',
     textAlign: 'center',
+  },
+
+  legalNoticeText: {
+    color: 'rgba(243, 232, 255, 0.5)',
+    fontSize: 11,
+    fontFamily: Platform.select({ ios: 'Georgia', android: 'serif' }),
+    textAlign: 'center',
+    paddingHorizontal: 20,
+    marginBottom: 8,
+    lineHeight: 16,
   },
 
   closeButton: {

@@ -67,6 +67,7 @@
     "account": {
       "title": "Hesap",
       "about": "Hakkında",
+      "terms": "Kullanım Şartları",
       "privacy": "Gizlilik Politikası",
       "logout": "Çıkış Yap",
       "deleteData": "Tüm Verileri Sil"
@@ -202,7 +203,8 @@
     },
     "btn": "Premium'a Geç",
     "price": "₺50.00 / Ay",
-    "notNow": "Şimdilik Değil"
+    "notNow": "Şimdilik Değil",
+    "legalNotice": "Abone olarak Kullanım Şartlarımızı ve Gizlilik Politikamızı kabul etmiş olursunuz."
   },
   "legal": {
     "aboutTitle": "TarotNova Hakkında",
