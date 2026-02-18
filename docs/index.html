@@ -1,78 +1,291 @@
 <!DOCTYPE html>
-<html lang="tr">
+<html lang="en">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>TarotNova - Destek</title>
+    <title>TarotNova — Support</title>
     <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
         body {
-            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
-            line-height: 1.6;
-            max-width: 800px;
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+            line-height: 1.7;
+            background: linear-gradient(135deg, #1d112b 0%, #2b173f 50%, #1d112b 100%);
+            color: #f3e8ff;
+            min-height: 100vh;
+        }
+        .container {
+            max-width: 720px;
             margin: 0 auto;
-            padding: 20px;
-            background: #f5f5f7;
-            color: #1d1d1f;
+            padding: 40px 20px;
         }
-        h1 {
-            color: #1A1A2E;
-            border-bottom: 2px solid #1A1A2E;
-            padding-bottom: 10px;
+        /* Header */
+        .header {
+            text-align: center;
+            margin-bottom: 40px;
+            padding-bottom: 30px;
+            border-bottom: 1px solid rgba(212, 175, 55, 0.3);
         }
-        .contact-info {
-            background: white;
-            padding: 20px;
-            border-radius: 10px;
-            margin: 20px 0;
-            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        .header .logo { font-size: 48px; margin-bottom: 8px; }
+        .header h1 {
+            font-size: 32px;
+            font-weight: 700;
+            color: #d4af37;
+            letter-spacing: 2px;
         }
-        a {
-            color: #1A1A2E;
+        .header p {
+            font-size: 16px;
+            color: rgba(243, 232, 255, 0.7);
+            margin-top: 8px;
+        }
+        /* Language Switch */
+        .lang-switch {
+            text-align: center;
+            margin-bottom: 30px;
+        }
+        .lang-btn {
+            display: inline-block;
+            padding: 8px 20px;
+            margin: 0 6px;
+            border-radius: 20px;
+            border: 1px solid rgba(212, 175, 55, 0.5);
+            background: transparent;
+            color: #d4af37;
+            font-size: 14px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+        .lang-btn.active, .lang-btn:hover {
+            background: #d4af37;
+            color: #1d112b;
+        }
+        /* Cards */
+        .card {
+            background: rgba(74, 4, 78, 0.25);
+            border: 1px solid rgba(112, 26, 117, 0.5);
+            border-radius: 16px;
+            padding: 28px;
+            margin-bottom: 24px;
+            backdrop-filter: blur(10px);
+        }
+        .card h2 {
+            font-size: 20px;
+            font-weight: 700;
+            color: #d4af37;
+            margin-bottom: 16px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        .card h2 .icon { font-size: 22px; }
+        .card p, .card li {
+            font-size: 15px;
+            color: rgba(243, 232, 255, 0.85);
+            margin-bottom: 10px;
+        }
+        .card ul { list-style: none; padding: 0; }
+        .card ul li { padding: 6px 0; padding-left: 20px; position: relative; }
+        .card ul li::before {
+            content: '✦';
+            position: absolute;
+            left: 0;
+            color: #d4af37;
+            font-size: 10px;
+            top: 10px;
+        }
+        .card a {
+            color: #d4af37;
             text-decoration: none;
-            font-weight: 500;
+            font-weight: 600;
+            transition: opacity 0.2s;
         }
-        a:hover {
-            text-decoration: underline;
+        .card a:hover { opacity: 0.8; text-decoration: underline; }
+        /* Contact CTA */
+        .contact-cta {
+            display: inline-block;
+            padding: 14px 32px;
+            background: linear-gradient(135deg, #d4af37, #F59E0B);
+            color: #1d112b;
+            font-weight: 700;
+            font-size: 16px;
+            border-radius: 12px;
+            text-decoration: none;
+            transition: transform 0.2s, box-shadow 0.2s;
+            box-shadow: 0 4px 15px rgba(212, 175, 55, 0.3);
         }
-        .links {
-            margin-top: 30px;
+        .contact-cta:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(212, 175, 55, 0.4);
         }
-        .links a {
-            display: block;
-            margin: 10px 0;
-            padding: 10px;
-            background: white;
-            border-radius: 5px;
+        /* FAQ */
+        .faq-item { margin-bottom: 18px; }
+        .faq-item h3 {
+            font-size: 16px;
+            font-weight: 600;
+            color: #f3e8ff;
+            margin-bottom: 6px;
+        }
+        .faq-item p {
+            font-size: 14px;
+            color: rgba(243, 232, 255, 0.7);
+            margin-bottom: 0;
+        }
+        .divider {
+            height: 1px;
+            background: rgba(112, 26, 117, 0.4);
+            margin: 14px 0;
+        }
+        /* Footer */
+        .footer {
+            text-align: center;
+            padding-top: 30px;
+            border-top: 1px solid rgba(212, 175, 55, 0.2);
+            margin-top: 10px;
+        }
+        .footer a {
+            color: #d4af37;
+            text-decoration: none;
+            font-weight: 600;
+            font-size: 15px;
+        }
+        .footer a:hover { text-decoration: underline; }
+        .footer p {
+            font-size: 13px;
+            color: rgba(243, 232, 255, 0.4);
+            margin-top: 16px;
+        }
+        /* Responsive */
+        @media (max-width: 480px) {
+            .container { padding: 24px 16px; }
+            .header h1 { font-size: 26px; }
+            .card { padding: 20px; }
         }
     </style>
 </head>
 <body>
-    <h1>TarotNova - Destek</h1>
+    <div class="container">
+        <!-- Header -->
+        <div class="header">
+            <div class="logo">🔮</div>
+            <h1>TarotNova</h1>
+            <p id="header-subtitle">Support & Help Center</p>
+        </div>
 
-    <div class="contact-info">
-        <h2>İletişim</h2>
-        <p>TarotNova hakkında sorularınız, geri bildirimleriniz veya destek talepleriniz için:</p>
-        <p><strong>E-posta:</strong> <a href="mailto:turksoymahir@gmail.com">turksoymahir@gmail.com</a></p>
+        <!-- Language Switch -->
+        <div class="lang-switch">
+            <button class="lang-btn active" onclick="setLang('en')">English</button>
+            <button class="lang-btn" onclick="setLang('tr')">Türkçe</button>
+        </div>
+
+        <!-- Contact Card -->
+        <div class="card">
+            <h2><span class="icon">📧</span> <span data-en="Contact Us" data-tr="Bize Ulaşın">Contact Us</span></h2>
+            <p data-en="Have questions, feedback, or need help with TarotNova? We're here to assist you. Please reach out via email and we'll respond within 24-48 hours."
+               data-tr="TarotNova hakkında sorularınız, geri bildirimleriniz veya yardıma mı ihtiyacınız var? Size yardımcı olmak için buradayız. Lütfen e-posta ile ulaşın, 24-48 saat içinde yanıt vereceğiz.">
+                Have questions, feedback, or need help with TarotNova? We're here to assist you. Please reach out via email and we'll respond within 24-48 hours.
+            </p>
+            <br>
+            <a href="mailto:turksoymahir@gmail.com" class="contact-cta">✉️ turksoymahir@gmail.com</a>
+        </div>
+
+        <!-- FAQ Card -->
+        <div class="card">
+            <h2><span class="icon">❓</span> <span data-en="Frequently Asked Questions" data-tr="Sık Sorulan Sorular">Frequently Asked Questions</span></h2>
+
+            <div class="faq-item">
+                <h3 data-en="How do I cancel my Premium subscription?" data-tr="Premium aboneliğimi nasıl iptal edebilirim?">How do I cancel my Premium subscription?</h3>
+                <p data-en="Go to Settings → Apple ID → Subscriptions → TarotNova → Cancel Subscription. Your access continues until the end of your billing period."
+                   data-tr="Ayarlar → Apple ID → Abonelikler → TarotNova → Aboneliği İptal Et. Erişiminiz fatura döneminizin sonuna kadar devam eder.">
+                    Go to Settings → Apple ID → Subscriptions → TarotNova → Cancel Subscription. Your access continues until the end of your billing period.
+                </p>
+            </div>
+            <div class="divider"></div>
+
+            <div class="faq-item">
+                <h3 data-en="How do I restore my purchases?" data-tr="Satın alımlarımı nasıl geri yüklerim?">How do I restore my purchases?</h3>
+                <p data-en="Open the app → Go to the Premium screen → Tap 'Restore Purchases'. Make sure you're signed in with the same Apple ID used for the original purchase."
+                   data-tr="Uygulamayı açın → Premium ekranına gidin → 'Satın Alımları Geri Yükle' butonuna dokunun. Orijinal satın alma için kullanılan Apple ID ile giriş yaptığınızdan emin olun.">
+                    Open the app → Go to the Premium screen → Tap "Restore Purchases". Make sure you're signed in with the same Apple ID used for the original purchase.
+                </p>
+            </div>
+            <div class="divider"></div>
+
+            <div class="faq-item">
+                <h3 data-en="How do I delete my account and data?" data-tr="Hesabımı ve verilerimi nasıl silerim?">How do I delete my account and data?</h3>
+                <p data-en="To delete your account and all associated data, please send an email to turksoymahir@gmail.com with the subject 'Account Deletion Request'. We will process your request within 7 business days and confirm once completed."
+                   data-tr="Hesabınızı ve tüm ilişkili verilerinizi silmek için lütfen turksoymahir@gmail.com adresine 'Hesap Silme Talebi' konulu bir e-posta gönderin. Talebinizi 7 iş günü içinde işleme alacak ve tamamlandığında onay vereceğiz.">
+                    To delete your account and all associated data, please send an email to turksoymahir@gmail.com with the subject "Account Deletion Request". We will process your request within 7 business days and confirm once completed.
+                </p>
+            </div>
+            <div class="divider"></div>
+
+            <div class="faq-item">
+                <h3 data-en="What is TarotNova Premium?" data-tr="TarotNova Premium nedir?">What is TarotNova Premium?</h3>
+                <p data-en="TarotNova Premium unlocks exclusive tarot spreads, unlimited AI-powered readings, and advanced features. You can subscribe monthly or annually through the app."
+                   data-tr="TarotNova Premium, özel tarot açılımlarının kilidini açar, sınırsız AI destekli okumalar ve gelişmiş özellikler sunar. Uygulama üzerinden aylık veya yıllık abone olabilirsiniz.">
+                    TarotNova Premium unlocks exclusive tarot spreads, unlimited AI-powered readings, and advanced features. You can subscribe monthly or annually through the app.
+                </p>
+            </div>
+            <div class="divider"></div>
+
+            <div class="faq-item">
+                <h3 data-en="Are the tarot readings accurate?" data-tr="Tarot okumaları doğru mu?">Are the tarot readings accurate?</h3>
+                <p data-en="TarotNova uses advanced AI to generate personalized interpretations based on your question, mood, and selected cards. Readings are for entertainment and self-reflection purposes only and should not replace professional advice."
+                   data-tr="TarotNova, sorunuza, ruh halinize ve seçtiğiniz kartlara dayalı kişiselleştirilmiş yorumlar üretmek için gelişmiş yapay zeka kullanır. Okumalar yalnızca eğlence ve öz-düşünme amaçlıdır ve profesyonel tavsiyenin yerini tutmamalıdır.">
+                    TarotNova uses advanced AI to generate personalized interpretations based on your question, mood, and selected cards. Readings are for entertainment and self-reflection purposes only and should not replace professional advice.
+                </p>
+            </div>
+            <div class="divider"></div>
+
+            <div class="faq-item">
+                <h3 data-en="The app isn't working properly. What should I do?" data-tr="Uygulama düzgün çalışmıyor. Ne yapmalıyım?">The app isn't working properly. What should I do?</h3>
+                <p data-en="Please try the following: 1) Close and reopen the app, 2) Check your internet connection, 3) Update to the latest version from the App Store, 4) Restart your device. If the issue persists, contact us at turksoymahir@gmail.com with a description of the problem."
+                   data-tr="Lütfen şunları deneyin: 1) Uygulamayı kapatıp tekrar açın, 2) İnternet bağlantınızı kontrol edin, 3) App Store'dan en son sürüme güncelleyin, 4) Cihazınızı yeniden başlatın. Sorun devam ederse turksoymahir@gmail.com adresine sorunun açıklamasıyla birlikte ulaşın.">
+                    Please try the following: 1) Close and reopen the app, 2) Check your internet connection, 3) Update to the latest version from the App Store, 4) Restart your device. If the issue persists, contact us at turksoymahir@gmail.com with a description of the problem.
+                </p>
+            </div>
+        </div>
+
+        <!-- About Card -->
+        <div class="card">
+            <h2><span class="icon">✨</span> <span data-en="About TarotNova" data-tr="TarotNova Hakkında">About TarotNova</span></h2>
+            <p data-en="TarotNova is an AI-powered tarot reading app that delivers deeply personalized interpretations using Google's Gemini AI. Unlike traditional tarot apps with static meanings, every reading is unique — crafted based on your specific question, emotional state, selected cards, and spread type."
+               data-tr="TarotNova, Google'ın Gemini AI'ını kullanarak son derece kişiselleştirilmiş yorumlar sunan, yapay zeka destekli bir tarot okuma uygulamasıdır. Statik anlamlara sahip geleneksel tarot uygulamalarının aksine, her okuma benzersizdir — sorunuza, ruh halinize, seçtiğiniz kartlara ve açılım türüne göre oluşturulur.">
+                TarotNova is an AI-powered tarot reading app that delivers deeply personalized interpretations using Google's Gemini AI. Unlike traditional tarot apps with static meanings, every reading is unique — crafted based on your specific question, emotional state, selected cards, and spread type.
+            </p>
+            <ul>
+                <li data-en="AI-generated unique interpretations for every reading" data-tr="Her okuma için AI tarafından üretilen benzersiz yorumlar">AI-generated unique interpretations for every reading</li>
+                <li data-en="Mood-aware readings that adapt to your emotional state" data-tr="Ruh halinize uyum sağlayan duygu-farkındalıklı okumalar">Mood-aware readings that adapt to your emotional state</li>
+                <li data-en="20+ spread types across 6 categories" data-tr="6 kategoride 20'den fazla açılım türü">20+ spread types across 6 categories</li>
+                <li data-en="Full bilingual support (English & Turkish)" data-tr="Tam iki dilli destek (İngilizce ve Türkçe)">Full bilingual support (English & Turkish)</li>
+                <li data-en="Save and revisit your favorite readings" data-tr="Favori okumalarınızı kaydedin ve tekrar ziyaret edin">Save and revisit your favorite readings</li>
+            </ul>
+        </div>
+
+        <!-- Footer -->
+        <div class="footer">
+            <a href="privacy-policy.html" data-en="Privacy Policy" data-tr="Gizlilik Politikası">Privacy Policy</a>
+            <p>© 2025 Mahir Turksoy. All rights reserved.</p>
+        </div>
     </div>
 
-    <div class="contact-info">
-        <h2>Sık Sorulan Sorular</h2>
-        <h3>Premium aboneliğimi nasıl iptal edebilirim?</h3>
-        <p><strong>iOS:</strong> Ayarlar → Apple ID → Abonelikler → TarotNova → Aboneliği İptal Et</p>
+    <script>
+        function setLang(lang) {
+            // Update all elements with data attributes
+            document.querySelectorAll('[data-en]').forEach(el => {
+                el.textContent = el.getAttribute('data-' + lang);
+            });
+            // Update button styles
+            document.querySelectorAll('.lang-btn').forEach(btn => {
+                btn.classList.remove('active');
+            });
+            const buttons = document.querySelectorAll('.lang-btn');
+            if (lang === 'en') buttons[0].classList.add('active');
+            else buttons[1].classList.add('active');
 
-        <h3>Satın alımlarımı nasıl geri yüklerim?</h3>
-        <p>Uygulama içinde Premium ekranındaki "Satın Alımları Geri Yükle" butonuna tıklayın.</p>
-
-        <h3>Hesabımı nasıl silerim?</h3>
-        <p>Hesap silme talebi için turksoymahir@gmail.com adresine e-posta gönderin.</p>
-    </div>
-
-    <div class="links">
-        <a href="privacy-policy.html">Gizlilik Politikası</a>
-    </div>
-
-    <p style="text-align: center; color: #666; margin-top: 40px; font-size: 14px;">
-        © 2024 Mahir Turksoy. Tüm hakları saklıdır.
-    </p>
+            // Update html lang
+            document.documentElement.lang = lang;
+        }
+    </script>
 </body>
 </html>
