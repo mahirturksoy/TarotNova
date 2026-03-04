@@ -12,7 +12,8 @@
     "ok": "Tamam",
     "continue": "Devam Et",
     "back": "Geri",
-    "warning": "Uyarı"
+    "warning": "Uyarı",
+    "and": "ve"
   },
   "tab": {
     "home": "Ana Sayfa",
@@ -36,7 +37,8 @@
       "sad": "Endişeli"
     },
     "interpretBtn": "Nova ile Yorumla",
-    "analyzing": "Nova başlatılıyor..."
+    "analyzing": "Nova başlatılıyor...",
+    "disclaimer": "⚠️ Tüm tarot okumaları yalnızca eğlence amaçlıdır ve profesyonel tavsiye yerine geçmez."
   },
   "profile": {
     "guest": "Misafir Kullanıcı",
@@ -123,7 +125,9 @@
     "premiumAlert": {
       "title": "Premium Özellik 🌟",
       "message": "\"{{spreadName}}\" açılımı sadece Premium üyeler içindir.\n\nSınırsız okuma ve tüm açılımlara erişmek için Premium'a geçin.",
-      "examine": "İncele"
+      "examine": "İncele",
+      "modalDescription": "açılımı sadece Premium üyelerimize özeldir.",
+      "modalSubDescription": "Sınırsız erişim ve derin analizler için şimdi yükseltin."
     }
   },
   "cardSelection": {
@@ -204,11 +208,15 @@
     "btn": "Premium'a Geç",
     "price": "₺50.00 / Ay",
     "notNow": "Şimdilik Değil",
+    "subscriptionInfo": "TarotNova Premium — Otomatik yenilenen abonelik. Ödeme Apple ID hesabınızdan tahsil edilir.",
+    "autoRenewInfo": "Abonelik, dönem bitiminden en az 24 saat önce iptal edilmediği sürece otomatik olarak yenilenir. İptal: Ayarlar → Apple ID → Abonelikler.",
+    "legalPrefix": "Abone olarak",
+    "legalSuffix": "kabul etmiş olursunuz.",
     "legalNotice": "Abone olarak Kullanım Şartlarımızı ve Gizlilik Politikamızı kabul etmiş olursunuz."
   },
   "legal": {
     "aboutTitle": "TarotNova Hakkında",
-    "aboutContent": "TarotNova, kadim tarot bilgeliğini modern yapay zeka teknolojisiyle buluşturan yeni nesil bir rehberlik uygulamasıdır.\n\nSürüm: 1.0.0",
+    "aboutContent": "TarotNova, kadim tarot bilgeliğini Google Gemini AI teknolojisiyle buluşturan yeni nesil bir rehberlik uygulamasıdır.\n\n✦ Her okuma benzersiz — sorunuza, ruh halinize ve seçtiğiniz kartlara göre AI tarafından üretilir\n✦ 6 kategoride 20+ farklı açılım türü\n✦ Tam iki dilli destek (TR/EN)\n\n⚠️ Tüm tarot okumaları yalnızca eğlence ve kişisel düşünme amaçlıdır.\n\nSürüm: 1.0.0",
     "privacyTitle": "Gizlilik Politikası",
     "privacyContent": "Verileriniz Google Firebase altyapısında güvenle saklanmaktadır.\n\n- Kişisel bilgileriniz 3. şahıslarla paylaşılmaz.\n- Tarot yorumları için Google Gemini AI teknolojisi kullanılmaktadır.\n- Hesabınızı ve verilerinizi dilediğiniz zaman silebilirsiniz."
   },
@@ -235,5 +243,21 @@
     "The Sun": "Neşeyi, başarıyı ve aydınlığı kucakla.",
     "Judgement": "Geçmişi değerlendir ve yeniden doğuşu yaşa.",
     "The World": "Bir döngüyü başarıyla tamamlamanın keyfini çıkar."
+  },
+  "queryLimit": {
+    "title": "Günlük Limitinize Ulaştınız",
+    "description": "Bugün için {{limit}} okuma hakkınızı kullandınız. Yeni bir okuma için aşağıdaki seçenekleri değerlendirin.",
+    "watchAd": "🎬 Reklam İzle → +1 Okuma Hakkı",
+    "goPremium": "⭐ Premium'a Geç",
+    "register": "📝 Kayıt Ol (3 Hak Kazan)",
+    "remainingInfo": "Kalan: {{remaining}}/{{limit}} okuma",
+    "bonusInfo": "+{{bonus}} bonus hak"
+  },
+  "ads": {
+    "adFreeExperience": "Reklamsız Deneyim",
+    "watchingAd": "Reklam yükleniyor...",
+    "adRewardGranted": "🎁 +1 okuma hakkı kazandınız!",
+    "adRewardFailed": "Reklam tamamlanamadı. Tekrar deneyin.",
+    "maxAdsReached": "Bugün için reklam izleme hakkınız doldu."
   }
 }

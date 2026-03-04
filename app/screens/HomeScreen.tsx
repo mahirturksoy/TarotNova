@@ -141,6 +141,9 @@ const HomeScreen: React.FC = () => {
                   </LinearGradient>
               </TouchableOpacity>
             </LinearGradient>
+
+            {/* Entertainment Disclaimer — Apple 4.3(b) Compliance */}
+            <Text style={styles.entertainmentDisclaimer}>{t('home.disclaimer')}</Text>
           </View>
         </ScrollView>
       </KeyboardAvoidingView>
@@ -175,6 +178,7 @@ const styles = StyleSheet.create({
   ctaButtonDisabled: { opacity: 0.5 },
   ctaGradient: { paddingVertical: 18, alignItems: 'center' },
   ctaButtonText: { fontSize: 18, fontWeight: 'bold', color: '#1d112b', letterSpacing: 1, fontFamily: Platform.select({ ios: 'Georgia-Bold', android: 'serif', default: 'serif' }) },
+  entertainmentDisclaimer: { fontSize: 10, color: 'rgba(243, 232, 255, 0.35)', textAlign: 'center', marginTop: 16, paddingHorizontal: 20, fontFamily: Platform.select({ ios: 'Georgia', android: 'serif', default: 'serif' }), lineHeight: 14 },
 });
 
 export default HomeScreen;

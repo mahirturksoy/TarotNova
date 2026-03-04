@@ -3,6 +3,7 @@
 import React, { useEffect, useRef } from 'react';
 import { View, Text, StyleSheet, Modal, TouchableOpacity, Animated, Platform, Easing, Dimensions } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
+import { useTranslation } from 'react-i18next';
 
 const { width } = Dimensions.get('window');
 
@@ -19,6 +20,7 @@ const MysticPremiumModal: React.FC<MysticPremiumModalProps> = ({
   onClose,
   onUpgrade,
 }) => {
+  const { t } = useTranslation();
   const scaleAnim = useRef(new Animated.Value(0.8)).current;
   const opacityAnim = useRef(new Animated.Value(0)).current;
 
@@ -52,24 +54,24 @@ const MysticPremiumModal: React.FC<MysticPremiumModalProps> = ({
                 <Text style={styles.icon}>✦</Text>
               </View>
               
-              <Text style={styles.title}>Premium Özellik</Text>
+              <Text style={styles.title}>{t('spread.premiumAlert.title')}</Text>
               
               <Text style={styles.description}>
-                <Text style={styles.highlight}>"{featureName}"</Text> açılımı sadece Premium üyelerimize özeldir.
+                <Text style={styles.highlight}>"{featureName}"</Text> {t('spread.premiumAlert.modalDescription')}
               </Text>
               
               <Text style={styles.subDescription}>
-                Sınırsız erişim ve derin analizler için şimdi yükseltin.
+                {t('spread.premiumAlert.modalSubDescription')}
               </Text>
 
               <View style={styles.buttonContainer}>
                 <TouchableOpacity style={styles.cancelButton} onPress={onClose}>
-                  <Text style={styles.cancelButtonText}>Vazgeç</Text>
+                  <Text style={styles.cancelButtonText}>{t('common.cancel')}</Text>
                 </TouchableOpacity>
 
                 <TouchableOpacity style={styles.upgradeButton} onPress={onUpgrade}>
                   <LinearGradient colors={['#d4af37', '#F59E0B']} style={styles.upgradeGradient}>
-                    <Text style={styles.upgradeButtonText}>İncele</Text>
+                    <Text style={styles.upgradeButtonText}>{t('spread.premiumAlert.examine')}</Text>
                   </LinearGradient>
                 </TouchableOpacity>
               </View>

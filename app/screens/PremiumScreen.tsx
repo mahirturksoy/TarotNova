@@ -1,13 +1,16 @@
 // app/screens/PremiumScreen.tsx
 
 import React, { useState, useEffect } from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, ScrollView, Platform, ActivityIndicator } from 'react-native';
+import { View, Text, StyleSheet, TouchableOpacity, ScrollView, Platform, ActivityIndicator, Linking } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useNavigation } from '@react-navigation/native';
 import { useTranslation } from 'react-i18next'; // <-- ÇEVİRİ EKLENDİ
 
 import PurchaseService, { OfferingPackage } from '../services/purchaseService'; // <-- SERVİS EKLENDİ
 import Toast from 'react-native-toast-message';
+
+const TERMS_URL = 'https://mahirturksoy.github.io/tarotnova-legal/terms.html';
+const PRIVACY_URL = 'https://mahirturksoy.github.io/tarotnova-legal/privacy-policy.html';
 
 const PremiumScreen: React.FC = () => {
   const navigation = useNavigation();
@@ -181,7 +184,34 @@ const PremiumScreen: React.FC = () => {
           </Text>
         </TouchableOpacity>
 
-        <Text style={styles.legalNoticeText}>{t('premium.legalNotice')}</Text>
+        {/* Subscription Details - Apple Guideline 3.1.2 Compliance */}
+        <View style={styles.subscriptionInfoContainer}>
+          <Text style={styles.subscriptionInfoText}>
+            {t('premium.subscriptionInfo')}
+          </Text>
+          <Text style={styles.autoRenewText}>
+            {t('premium.autoRenewInfo')}
+          </Text>
+        </View>
+
+        {/* Legal Links - Tappable */}
+        <View style={styles.legalLinksContainer}>
+          <Text style={styles.legalNoticeText}>
+            {t('premium.legalPrefix')}
+          </Text>
+          <View style={styles.legalLinksRow}>
+            <TouchableOpacity onPress={() => Linking.openURL(TERMS_URL)}>
+              <Text style={styles.legalLinkText}>{t('profile.account.terms')}</Text>
+            </TouchableOpacity>
+            <Text style={styles.legalSeparator}> {t('common.and')} </Text>
+            <TouchableOpacity onPress={() => Linking.openURL(PRIVACY_URL)}>
+              <Text style={styles.legalLinkText}>{t('profile.account.privacy')}</Text>
+            </TouchableOpacity>
+          </View>
+          <Text style={styles.legalNoticeText}>
+            {t('premium.legalSuffix')}
+          </Text>
+        </View>
 
         <TouchableOpacity style={styles.closeButton} onPress={() => navigation.goBack()}>
           <Text style={styles.closeButtonText}>{t('premium.notNow')}</Text>
@@ -323,8 +353,51 @@ const styles = StyleSheet.create({
     fontFamily: Platform.select({ ios: 'Georgia', android: 'serif' }),
     textAlign: 'center',
     paddingHorizontal: 20,
-    marginBottom: 8,
     lineHeight: 16,
+  },
+
+  subscriptionInfoContainer: {
+    marginTop: 4,
+    marginBottom: 8,
+    paddingHorizontal: 20,
+  },
+  subscriptionInfoText: {
+    color: 'rgba(243, 232, 255, 0.5)',
+    fontSize: 11,
+    fontFamily: Platform.select({ ios: 'Georgia', android: 'serif' }),
+    textAlign: 'center',
+    lineHeight: 16,
+  },
+  autoRenewText: {
+    color: 'rgba(243, 232, 255, 0.5)',
+    fontSize: 10,
+    fontFamily: Platform.select({ ios: 'Georgia', android: 'serif' }),
+    textAlign: 'center',
+    lineHeight: 15,
+    marginTop: 4,
+  },
+
+  legalLinksContainer: {
+    alignItems: 'center',
+    marginBottom: 8,
+    paddingHorizontal: 20,
+  },
+  legalLinksRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    flexWrap: 'wrap',
+  },
+  legalLinkText: {
+    color: '#d4af37',
+    fontSize: 11,
+    fontFamily: Platform.select({ ios: 'Georgia', android: 'serif' }),
+    textDecorationLine: 'underline',
+  },
+  legalSeparator: {
+    color: 'rgba(243, 232, 255, 0.5)',
+    fontSize: 11,
+    fontFamily: Platform.select({ ios: 'Georgia', android: 'serif' }),
   },
 
   closeButton: {

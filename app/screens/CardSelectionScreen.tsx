@@ -23,6 +23,10 @@ import { SpreadType } from '../constants/spreadTypes';
 import type { RootStackParamList } from '../types/navigation';
 import TarotCard from '../components/TarotCard'; // Resimli Kart Bileşeni
 import { generateTarotInterpretation } from '../services/novaApiService';
+import queryLimitService from '../services/queryLimitService';
+import type { QueryCheckResult } from '../services/queryLimitService';
+import adService from '../services/adService';
+import MysticLimitModal from '../components/MysticLimitModal';
 
 type CardSelectionScreenNavigationProp = NativeStackNavigationProp<RootStackParamList, 'CardSelection'>;
 
@@ -62,6 +66,9 @@ const CardSelectionScreen: React.FC = () => {
   const [shuffledDeck, setShuffledDeck] = useState<TarotCardData[]>([]);
   const [selectedIndices, setSelectedIndices] = useState<number[]>([]);
   const [isAnalyzing, setIsAnalyzing] = useState(false);
+  const [limitModalVisible, setLimitModalVisible] = useState(false);
+  const [limitInfo, setLimitInfo] = useState<QueryCheckResult | null>(null);
+  const [isAdLoading, setIsAdLoading] = useState(false);
 
   useEffect(() => {
     setShuffledDeck(shuffleDeck(MAJOR_ARCANA));
@@ -79,6 +86,14 @@ const CardSelectionScreen: React.FC = () => {
   const handleInterpret = async () => {
     if (selectedIndices.length !== requiredCardCount) return;
 
+    // ── 1. GÜNLÜK LİMİT KONTROLÜ ──
+    const checkResult = await queryLimitService.canMakeQuery();
+    if (!checkResult.allowed) {
+      setLimitInfo(checkResult);
+      setLimitModalVisible(true);
+      return; // API çağrısı yapılmaz
+    }
+
     setIsAnalyzing(true);
 
     // Seçilen kartları API formatına hazırla
@@ -92,7 +107,10 @@ const CardSelectionScreen: React.FC = () => {
     });
 
     try {
-      // 1. Nova API'ye sor
+      // ── 2. AGRESİF INTERSTITIAL — API'DEN ÖNCE ──
+      await adService.showInterstitial();
+
+      // ── 3. NOVA API'YE SOR ──
       const interpretation = await generateTarotInterpretation({
         question,
         mood,
@@ -100,7 +118,10 @@ const CardSelectionScreen: React.FC = () => {
         cards: selectedCardsData
       });
 
-      // 2. Sonucu Context'e kaydet
+      // ── 4. SORGU SAYACINI ARTIR ──
+      await queryLimitService.recordQuery();
+
+      // 5. Sonucu Context'e kaydet
       startNewReading({
         question,
         mood,
@@ -108,7 +129,7 @@ const CardSelectionScreen: React.FC = () => {
         selectedCards: selectedCardsData.map(c => c.cardName)
       }, interpretation);
 
-      // 3. Sonuç ekranına git
+      // 6. Sonuç ekranına git
       navigation.navigate('Reading');
 
     } catch (error) {
@@ -116,6 +137,24 @@ const CardSelectionScreen: React.FC = () => {
       Alert.alert(t('common.error'), "Yorum alınamadı. Lütfen tekrar deneyin.");
     } finally {
       setIsAnalyzing(false);
+    }
+  };
+
+  // ── LİMİT MODAL: REKLAM İZLE HANDLER ──
+  const handleWatchAd = async () => {
+    setIsAdLoading(true);
+    try {
+      const rewarded = await adService.showRewarded();
+      if (rewarded) {
+        const granted = await queryLimitService.grantBonusFromAd();
+        if (granted) {
+          setLimitModalVisible(false);
+          setLimitInfo(null);
+          // Kullanıcı artık tekrar "Yorumla" butonuna basabilir
+        }
+      }
+    } finally {
+      setIsAdLoading(false);
     }
   };
 
@@ -193,6 +232,32 @@ const CardSelectionScreen: React.FC = () => {
             </LinearGradient>
           </TouchableOpacity>
         </View>
+      )}
+
+      {/* Günlük Limit Modalı */}
+      {limitInfo && (
+        <MysticLimitModal
+          visible={limitModalVisible}
+          userType={limitInfo.userType || 'GUEST'}
+          limit={limitInfo.limit || 0}
+          canWatchAd={limitInfo.canWatchAd || false}
+          isAdLoading={isAdLoading}
+          onClose={() => {
+            setLimitModalVisible(false);
+            setLimitInfo(null);
+          }}
+          onWatchAd={handleWatchAd}
+          onGoPremium={() => {
+            setLimitModalVisible(false);
+            setLimitInfo(null);
+            navigation.navigate('Premium');
+          }}
+          onGoRegister={limitInfo.userType === 'GUEST' ? () => {
+            setLimitModalVisible(false);
+            setLimitInfo(null);
+            navigation.navigate('Auth');
+          } : undefined}
+        />
       )}
     </LinearGradient>
   );

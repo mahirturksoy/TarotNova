@@ -9,6 +9,7 @@ import {
   TouchableOpacity,
   ActivityIndicator,
   Platform,
+  Alert,
 } from "react-native";
 import { LinearGradient } from "expo-linear-gradient";
 import {
@@ -27,6 +28,7 @@ import ReadingDisplay from "../components/ReadingDisplay";
 import MysticSuccessModal from "../components/MysticSuccessModal";
 import MysticAuthModal from "../components/MysticAuthModal";
 import { auth } from "../config/firebaseConfig";
+import adService from "../services/adService";
 
 type ReadingScreenNavigationProp = CompositeNavigationProp<
   NativeStackNavigationProp<RootStackParamList, "Reading">,
@@ -120,11 +122,15 @@ const ReadingScreen: React.FC = () => {
     return `Tarot Okuması - ${timeStr}`;
   };
 
-  const handleNewReading = () => {
+  const handleNewReading = async () => {
+    // AGRESİF INTERSTITIAL — "Yeni Okuma" butonuna basınca
+    await adService.showInterstitial();
     navigation.navigate("Main", { screen: "Ana Sayfa" });
   };
 
-  const handleViewHistory = () => {
+  const handleViewHistory = async () => {
+    // AGRESİF INTERSTITIAL — "Geçmiş" butonuna basınca
+    await adService.showInterstitial();
     navigation.navigate("Main", { screen: "Geçmiş" });
   };
 
@@ -195,6 +201,10 @@ const ReadingScreen: React.FC = () => {
               <Text style={styles.actionButtonText}>{t('tab.history')}</Text>
             </TouchableOpacity>
           </View>
+
+          {/* Entertainment Disclaimer — Apple 4.3(b) Compliance */}
+          <Text style={styles.entertainmentDisclaimer}>{t('home.disclaimer')}</Text>
+
         </LinearGradient>
       </ScrollView>
 
@@ -274,6 +284,15 @@ const styles = StyleSheet.create({
     fontWeight: "bold",
     color: "#d4af37",
     fontFamily: Platform.select({ ios: "Georgia", android: "serif" }),
+  },
+  entertainmentDisclaimer: {
+    fontSize: 10,
+    color: "rgba(243, 232, 255, 0.35)",
+    textAlign: "center",
+    paddingHorizontal: 20,
+    marginBottom: 20,
+    fontFamily: Platform.select({ ios: "Georgia", android: "serif" }),
+    lineHeight: 14,
   },
 });
 

@@ -23,7 +23,7 @@
       "supportsTablet": true,
       "bundleIdentifier": "com.mahirturksoy.tarotnova",
       "icon": "./assets/nova-icon.png",
-      "googleServicesFile": "./ios/TarotNova/GoogleService-Info.plist",
+      "googleServicesFile": "./GoogleService-Info.plist",
       "infoPlist": {
         "CFBundleURLTypes": [
           {
@@ -44,7 +44,7 @@
       "edgeToEdgeEnabled": true,
       "predictiveBackGestureEnabled": false,
       "package": "com.mahirturksoy.tarotnova",
-      "googleServicesFile": "./android/app/google-services.json"
+      "googleServicesFile": "./google-services.json"
     },
     "web": {
       "favicon": "./assets/favicon.png"
@@ -68,7 +68,19 @@
           "color": "#d4af37"
         }
       ],
-      "react-native-purchases"
+      [
+        "react-native-google-mobile-ads",
+        {
+          "androidAppId": "ca-app-pub-1652577490868605~3697263198",
+          "iosAppId": "ca-app-pub-1652577490868605~2080929190"
+        }
+      ],
+      [
+        "expo-tracking-transparency",
+        {
+          "userTrackingPermission": "Bu tanımlayıcı, size kişiselleştirilmiş reklamlar sunmak için kullanılacaktır. / This identifier will be used to deliver personalized ads to you."
+        }
+      ]
     ],
     "extra": {
       "eas": {

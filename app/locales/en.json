@@ -12,7 +12,8 @@
     "ok": "OK",
     "continue": "Continue",
     "back": "Back",
-    "warning": "Warning"
+    "warning": "Warning",
+    "and": "and"
   },
   "tab": {
     "home": "Home",
@@ -36,7 +37,8 @@
       "excited": "Excited"
     },
     "interpretBtn": "Interpret with Nova",
-    "analyzing": "Starting Nova..."
+    "analyzing": "Starting Nova...",
+    "disclaimer": "⚠️ All tarot readings are for entertainment purposes only and do not constitute professional advice."
   },
   "profile": {
     "guest": "Guest User",
@@ -123,7 +125,9 @@
     "premiumAlert": {
       "title": "Premium Feature 🌟",
       "message": "The \"{{spreadName}}\" spread is for Premium members only.\n\nUpgrade to Premium for unlimited access and deep analysis.",
-      "examine": "View"
+      "examine": "View",
+      "modalDescription": "spread is exclusively for our Premium members.",
+      "modalSubDescription": "Upgrade now for unlimited access and deep analysis."
     }
   },
   "cardSelection": {
@@ -204,11 +208,15 @@
     "btn": "Get Premium",
     "price": "₺50.00 / Month",
     "notNow": "Not Now",
+    "subscriptionInfo": "TarotNova Premium — Auto-renewable subscription. Payment is charged to your Apple ID account.",
+    "autoRenewInfo": "Subscription automatically renews unless canceled at least 24 hours before the end of the current period. Cancel: Settings → Apple ID → Subscriptions.",
+    "legalPrefix": "By subscribing, you agree to our",
+    "legalSuffix": ".",
     "legalNotice": "By subscribing, you agree to our Terms of Use and Privacy Policy."
   },
   "legal": {
     "aboutTitle": "About TarotNova",
-    "aboutContent": "TarotNova is a next-generation guidance app combining ancient tarot wisdom with modern AI technology.\n\nVersion: 1.0.0",
+    "aboutContent": "TarotNova is a next-generation guidance app combining ancient tarot wisdom with Google Gemini AI technology.\n\n✦ Every reading is unique — AI-generated based on your question, mood, and selected cards\n✦ 20+ spread types across 6 categories\n✦ Full bilingual support (EN/TR)\n\n⚠️ All tarot readings are for entertainment and personal reflection purposes only.\n\nVersion: 1.0.0",
     "privacyTitle": "Privacy Policy",
     "privacyContent": "Your data is securely stored on Google Firebase infrastructure.\n\n- Your personal information is never shared with 3rd parties.\n- Google Gemini AI technology is used for tarot interpretations.\n- You can delete your account and data at any time."
   },
@@ -235,5 +243,21 @@
     "The Sun": "Embrace joy, success, and light.",
     "Judgement": "Evaluate the past and experience rebirth.",
     "The World": "Enjoy successfully completing a cycle."
+  },
+  "queryLimit": {
+    "title": "Daily Limit Reached",
+    "description": "You have used your {{limit}} reading(s) for today. Explore the options below for a new reading.",
+    "watchAd": "🎬 Watch Ad → +1 Reading",
+    "goPremium": "⭐ Go Premium",
+    "register": "📝 Sign Up (Get 3 Readings)",
+    "remainingInfo": "Remaining: {{remaining}}/{{limit}} readings",
+    "bonusInfo": "+{{bonus}} bonus reading(s)"
+  },
+  "ads": {
+    "adFreeExperience": "Ad-Free Experience",
+    "watchingAd": "Loading ad...",
+    "adRewardGranted": "🎁 +1 reading earned!",
+    "adRewardFailed": "Ad could not be completed. Try again.",
+    "maxAdsReached": "You've reached the ad limit for today."
   }
 }

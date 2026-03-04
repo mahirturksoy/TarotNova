@@ -29,6 +29,7 @@ import {
 import type { RootStackParamList, TabParamList } from '../types/navigation';
 import { MAJOR_ARCANA, getCardImage } from '../constants/tarotDeck';
 import MysticConfirmationModal from '../components/MysticConfirmationModal';
+import AdBanner from '../components/AdBanner';
 
 const cardDataMap = new Map(MAJOR_ARCANA.map(card => [card.name, card]));
 
@@ -70,16 +71,19 @@ const ReadingHistoryScreen: React.FC = () => {
 
   const applyFilter = (readingsToFilter: ReadingHistoryItem[], filter: FilterType) => {
     let filtered = [...readingsToFilter];
-    const now = new Date();
     switch (filter) {
-      case 'thisWeek':
-        const weekAgo = new Date(now.setDate(now.getDate() - 7));
+      case 'thisWeek': {
+        const weekAgo = new Date();
+        weekAgo.setDate(weekAgo.getDate() - 7);
         filtered = readingsToFilter.filter(reading => new Date(reading.createdAt) >= weekAgo);
         break;
-      case 'thisMonth':
-        const monthAgo = new Date(now.setMonth(now.getMonth() - 1));
+      }
+      case 'thisMonth': {
+        const monthAgo = new Date();
+        monthAgo.setMonth(monthAgo.getMonth() - 1);
         filtered = readingsToFilter.filter(reading => new Date(reading.createdAt) >= monthAgo);
         break;
+      }
     }
     setFilteredReadings(filtered);
   };
@@ -232,6 +236,8 @@ const ReadingHistoryScreen: React.FC = () => {
                 ListEmptyComponent={isLoading ? null : renderEmptyState} 
             />
         </View>
+        {/* Banner Reklam — Tab bar üzerinde */}
+        <AdBanner style={styles.bannerContainer} />
       </LinearGradient>
 
       <MysticConfirmationModal
@@ -284,6 +290,9 @@ const styles = StyleSheet.create({
   ctaButton: { borderRadius: 12, overflow: 'hidden', shadowColor: '#d4af37', shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.3, shadowRadius: 8, elevation: 8, width: '100%' },
   ctaGradient: { paddingVertical: 16, alignItems: 'center' },
   ctaButtonText: { fontSize: 18, fontWeight: 'bold', color: '#1d112b', fontFamily: Platform.select({ ios: 'Georgia-Bold', android: 'serif' }) },
+
+  // BANNER REKLAM
+  bannerContainer: { position: 'absolute', bottom: 85, left: 0, right: 0 },
 });
 
 export default ReadingHistoryScreen;

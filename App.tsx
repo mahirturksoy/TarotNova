@@ -17,7 +17,9 @@ import { useTranslation } from 'react-i18next'; // <-- Hook eklendi
 import revenueCatService from './app/services/revenueCatService';
 import notificationService from './app/services/notificationService';
 import firestoreService from './app/services/firestoreService';
+import adService from './app/services/adService';
 import { auth } from './app/config/firebaseConfig';
+import { requestTrackingPermissionsAsync } from 'expo-tracking-transparency';
 
 // Context
 import { ReadingProvider } from './app/context/ReadingContext';
@@ -124,6 +126,18 @@ const App: React.FC = () => {
         console.log('🔄 Checking for Firestore migration...');
         await firestoreService.migrateAsyncStorageToFirestore();
 
+        // iOS ATT (App Tracking Transparency) izni iste
+        console.log('🔒 Requesting tracking permission...');
+        try {
+          await requestTrackingPermissionsAsync();
+        } catch (attError) {
+          console.warn('⚠️ ATT permission request failed:', attError);
+        }
+
+        // Reklam servisini başlat (Premium kullanıcıda skip edilir)
+        console.log('📺 Initializing AdService...');
+        await adService.initialize();
+
         // Splash delay
         await new Promise(resolve => setTimeout(resolve, 1000));
       } catch (e) {
@@ -145,6 +159,8 @@ const App: React.FC = () => {
         console.log('🧹 Cleaning up notification listeners');
         notificationCleanup();
       }
+      console.log('🧹 Cleaning up ad service');
+      adService.cleanup();
     };
   }, []);
 

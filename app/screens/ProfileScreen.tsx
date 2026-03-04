@@ -6,7 +6,7 @@ import { LinearGradient } from 'expo-linear-gradient';
 import { useNavigation, useFocusEffect, CompositeNavigationProp } from '@react-navigation/native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { auth } from '../config/firebaseConfig';
-import { onAuthStateChanged, User, signOut } from 'firebase/auth';
+import { FirebaseAuthTypes } from '@react-native-firebase/auth';
 import { getUserStats, clearAllHistory, UserStats } from '../services/readingHistoryService';
 import MysticConfirmationModal from '../components/MysticConfirmationModal';
 import MysticInfoModal from '../components/MysticInfoModal';
@@ -36,14 +36,14 @@ type ProfileScreenNavigationProp = CompositeNavigationProp<BottomTabNavigationPr
 const ProfileScreen: React.FC = () => {
   const navigation = useNavigation<ProfileScreenNavigationProp>();
   const { t, i18n } = useTranslation();
-  const [user, setUser] = useState<User | null>(auth.currentUser);
+  const [user, setUser] = useState<FirebaseAuthTypes.User | null>(auth.currentUser);
   const [userStats, setUserStats] = useState<UserStats | null>(null);
   const [preferences, setPreferences] = useState<UserPreferences>({ notifications: true, dailyReminder: true, autoSave: true });
   
   // Modal State Yönetimi
   const [modalType, setModalType] = useState<'none' | 'delete' | 'about' | 'privacy' | 'language'>('none');
 
-  useEffect(() => { const unsubscribe = onAuthStateChanged(auth, (currentUser) => { setUser(currentUser); }); return () => unsubscribe(); }, []);
+  useEffect(() => { const unsubscribe = auth.onAuthStateChanged((currentUser) => { setUser(currentUser); }); return () => unsubscribe(); }, []);
   useFocusEffect(useCallback(() => { loadUserData(); loadPreferences(); }, []));
 
   // Bildirim izinlerini kayıt et (Component mount olduğunda)
@@ -101,7 +101,7 @@ const ProfileScreen: React.FC = () => {
   };
   
   const confirmClearHistory = async () => { try { await clearAllHistory(); await loadUserData(); setModalType('none'); } catch (error) { setModalType('none'); } };
-  const handleSignOut = async () => { try { await signOut(auth); } catch (error) { console.error("Çıkış hatası:", error); } };
+  const handleSignOut = async () => { try { await auth.signOut(); } catch (error) { console.error("Çıkış hatası:", error); } };
   const openSocialMedia = async (url: string) => { const supported = await Linking.canOpenURL(url); if (supported) await Linking.openURL(url); };
 
   const changeLanguage = async (lang: string) => {
@@ -153,7 +153,7 @@ const ProfileScreen: React.FC = () => {
           <View style={styles.section}><Text style={styles.sectionTitle}>{t('profile.account.title')}</Text><View style={styles.ritualContainer}>
                 <TouchableOpacity style={styles.accountRow} activeOpacity={0.7} onPress={() => setModalType('about')}><View style={styles.ritualInfo}><Text style={styles.ritualSymbol}>i</Text><Text style={styles.ritualLabel}>{t('profile.account.about')}</Text></View><Text style={styles.ritualArrow}>›</Text></TouchableOpacity>
                 <TouchableOpacity style={styles.accountRow} activeOpacity={0.7} onPress={() => Linking.openURL('https://mahirturksoy.github.io/tarotnova-legal/terms.html')}><View style={styles.ritualInfo}><Text style={styles.ritualSymbol}>📜</Text><Text style={styles.ritualLabel}>{t('profile.account.terms')}</Text></View><Text style={styles.ritualArrow}>›</Text></TouchableOpacity>
-                <TouchableOpacity style={styles.accountRow} activeOpacity={0.7} onPress={() => setModalType('privacy')}><View style={styles.ritualInfo}><Text style={styles.ritualSymbol}>☗</Text><Text style={styles.ritualLabel}>{t('profile.account.privacy')}</Text></View><Text style={styles.ritualArrow}>›</Text></TouchableOpacity>
+                <TouchableOpacity style={styles.accountRow} activeOpacity={0.7} onPress={() => Linking.openURL('https://mahirturksoy.github.io/tarotnova-legal/privacy-policy.html')}><View style={styles.ritualInfo}><Text style={styles.ritualSymbol}>☗</Text><Text style={styles.ritualLabel}>{t('profile.account.privacy')}</Text></View><Text style={styles.ritualArrow}>›</Text></TouchableOpacity>
                 {user && (<TouchableOpacity style={styles.accountRow} activeOpacity={0.7} onPress={handleSignOut}><View style={styles.ritualInfo}><Text style={styles.ritualSymbol}>➜</Text><Text style={styles.ritualLabel}>{t('profile.account.logout')}</Text></View></TouchableOpacity>)}
                 <TouchableOpacity style={[styles.accountRow, { borderBottomWidth: 0 }]} activeOpacity={0.7} onPress={() => setModalType('delete')}><View style={styles.ritualInfo}><Text style={[styles.ritualSymbol, {color: '#EF4444'}]}>✕</Text><Text style={[styles.ritualLabel, {color: '#EF4444'}]}>{t('profile.account.deleteData')}</Text></View><Text style={styles.ritualArrow}>›</Text></TouchableOpacity>
           </View></View>
@@ -190,7 +190,6 @@ const ProfileScreen: React.FC = () => {
       />
 
       <MysticInfoModal visible={modalType === 'about'} onClose={() => setModalType('none')} title={t('legal.aboutTitle')} icon="✧" content={t('legal.aboutContent')} buttons={[{ text: 'Instagram', onPress: () => openSocialMedia('https://www.instagram.com/tarotnova777'), variant: 'primary' }, { text: 'TikTok', onPress: () => openSocialMedia('https://www.tiktok.com/@tarotnova777'), variant: 'secondary' }, { text: t('common.close'), onPress: () => setModalType('none'), variant: 'secondary' }]} />
-      <MysticInfoModal visible={modalType === 'privacy'} onClose={() => setModalType('none')} title={t('legal.privacyTitle')} icon="🔒" content={t('legal.privacyContent')} buttons={[{ text: t('common.ok'), onPress: () => setModalType('none'), variant: 'primary' }]} />
     </>
   );
 };
