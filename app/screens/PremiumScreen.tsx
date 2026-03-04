@@ -9,8 +9,8 @@ import { useTranslation } from 'react-i18next'; // <-- ÇEVİRİ EKLENDİ
 import PurchaseService, { OfferingPackage } from '../services/purchaseService'; // <-- SERVİS EKLENDİ
 import Toast from 'react-native-toast-message';
 
-const TERMS_URL = 'https://mahirturksoy.github.io/tarotnova-legal/terms.html';
-const PRIVACY_URL = 'https://mahirturksoy.github.io/tarotnova-legal/privacy-policy.html';
+const TERMS_URL = 'https://mahirturksoy.github.io/TarotNova/terms.html';
+const PRIVACY_URL = 'https://mahirturksoy.github.io/TarotNova/privacy-policy.html';
 
 const PremiumScreen: React.FC = () => {
   const navigation = useNavigation();
